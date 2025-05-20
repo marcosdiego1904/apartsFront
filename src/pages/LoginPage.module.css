@@ -1,0 +1,12 @@
+.loginContainer{
+    background-color: lightgray;
+    height: 500px;
+    width: 350px;
+    margin: 50px auto;
+}
+.elementsContainer{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}

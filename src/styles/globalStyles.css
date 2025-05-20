@@ -1,0 +1,431 @@
+
+  /* Reset and Base Styles */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif; /* Ensure Inter font is loaded if not using Tailwind */
+    background-color: #f4f7f9; /* Light bluish-gray background */
+    color: #333;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #root {
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Layout Containers */
+  .dashboard-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Sidebar Styling */
+  .dashboard-sidebar {
+    width: 260px;
+    background-color: #0A2540; /* Elegant Dark Blue */
+    color: #e0e6eb; /* Light text for contrast */
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out, width 0.3s ease-in-out; /* Added width transition */
+    box-shadow: 2px 0 8px rgba(0,0,0,0.15); /* Slightly more pronounced shadow */
+  }
+
+  .dashboard-sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+
+  .sidebar-header {
+    padding: 0 20px 20px 20px;
+    text-align: center;
+    border-bottom: 1px solid #1B4B70; /* Slightly lighter blue for separation */
+  }
+
+  .sidebar-header h1 {
+    font-size: 1.6em; /* Slightly larger */
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+  .sidebar-header h1 svg {
+    margin-right: 12px; /* Increased margin */
+    color: #79C7E8; /* Light accent blue */
+  }
+
+  .sidebar-nav ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 25px; /* Increased margin */
+    flex-grow: 1;
+  }
+
+  .sidebar-nav li a {
+    display: flex;
+    align-items: center;
+    padding: 15px 30px; /* Adjusted padding for more space */
+    color: #bac8d3; /* Softer text color */
+    text-decoration: none;
+    font-size: 1em; /* Slightly larger font */
+    transition: background-color 0.2s ease, color 0.2s ease, border-left 0.2s ease;
+    border-left: 4px solid transparent;
+  }
+
+  .sidebar-nav li a svg {
+    margin-right: 18px; /* Increased margin */
+    width: 22px; /* Slightly larger icons */
+    height: 22px;
+    stroke-width: 2;
+  }
+
+  .sidebar-nav li a:hover {
+    background-color: #1B4B70;
+    color: #ffffff;
+  }
+
+  .sidebar-nav li a.active {
+    background-color: #123758;
+    color: #ffffff;
+    border-left: 4px solid #79C7E8; /* Light accent blue for active */
+    font-weight: 600; /* Bolder active link */
+  }
+
+  .sidebar-footer {
+    padding: 25px 20px; /* Increased padding */
+    text-align: center;
+    font-size: 0.85em; /* Slightly larger */
+    color: #8a9bab; /* Muted footer text */
+    border-top: 1px solid #1B4B70;
+  }
+
+  /* Main Content Area (includes Header + Page Content) */
+  .main-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin-left: 260px; /* Default sidebar width */
+    transition: margin-left 0.3s ease-in-out;
+  }
+  
+  .main-wrapper.sidebar-collapsed {
+    margin-left: 0;
+  }
+
+
+  /* Header Styling - IMPROVED */
+  .dashboard-header {
+    background-color: #ffffff; /* Keep white background for cleanliness */
+    color: #333;
+    padding: 0 30px; /* Increased horizontal padding */
+    height: 75px; /* Slightly taller header */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dde2e7; /* Lighter, softer border */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03); /* Subtler shadow for depth */
+    position: sticky;
+    top: 0;
+    z-index: 900;
+  }
+  
+  .header-left {
+    display: flex;
+    align-items: center;
+  }
+
+  .menu-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 12px; /* Larger touch target */
+    margin-right: 18px; /* Increased margin */
+    display: none; 
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+  }
+  .menu-toggle:hover {
+    background-color: #f0f0f0; /* Subtle hover effect */
+  }
+  .menu-toggle svg {
+    width: 26px; /* Slightly larger icon */
+    height: 26px;
+    color: #0A2540; 
+  }
+
+  .header-title {
+    font-size: 1.4em; /* Slightly larger */
+    font-weight: 600;
+    color: #0A2540; 
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Added gap between items */
+  }
+
+  .notification-bell{
+    /* margin-left removed, using gap on parent */
+    position: relative;
+    cursor: pointer;
+    padding: 8px; /* Add padding for better click area */
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+  }
+  .notification-bell:hover  {
+    background-color: #f0f0f0; /* Subtle hover for icons */
+  }
+  .user-profile-container{
+    position: relative;
+    cursor: pointer;
+    padding: 15px;
+    transition: background-color 0.2s ease;
+    
+  }
+  .user-profile-container:hover{
+    background-color: #f0f0f0;
+  }
+  .notification-bell svg, .user-profile-container svg.user-icon {
+    width: 24px; 
+    height: 24px;
+    color: #4A5568; /* Slightly darker, more neutral icon color */
+    transition: color 0.2s ease;
+  }
+   /* No need for specific hover color on SVG if parent has background hover */
+
+  .notification-badge {
+    position: absolute;
+    top: 2px; /* Adjusted position */
+    right: 2px; /* Adjusted position */
+    background-color: #E53E3E; /* Vibrant red */
+    color: white;
+    border-radius: 50%;
+    padding: 3px 6px; /* Slightly more padding */
+    font-size: 0.7em; 
+    font-weight: bold;
+    border: 1px solid white; /* Adds a bit of separation */
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    /* margin-left removed */
+  }
+  .user-info img {
+    width: 42px; /* Larger avatar */
+    height: 42px;
+    border-radius: 50%;
+    margin-right: 12px;
+    border: 2px solid #A0AEC0; /* Neutral border, less prominent */
+    object-fit: cover;
+  }
+  .user-details {
+    font-size: 0.9em;
+    line-height: 1.4; /* Improved line height */
+  }
+  .user-details .user-name {
+    font-weight: 600;
+    color: #1A202C; /* Darker text for name */
+  }
+  .user-details .user-role {
+    font-size: 0.85em;
+    color: #718096; /* Softer, more muted role color */
+  }
+
+  .logout-button {
+    /* margin-left removed */
+    padding: 9px 18px; /* Slightly more padding */
+    background-color: transparent; /* Transparent background */
+    color: #E53E3E; /* Red text */
+    border: 1px solid #E53E3E; /* Red border */
+    border-radius: 6px; /* Slightly more rounded */
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    display: flex;
+    align-items: center;
+  }
+  .logout-button:hover {
+    background-color: #E53E3E; /* Red background on hover */
+    color: white; /* White text on hover */
+  }
+  .logout-button svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    stroke-width: 2;
+  }
+
+  /* Main Content Styling */
+  .dashboard-main-content {
+    flex-grow: 1;
+    padding: 30px; /* Increased padding */
+    overflow-y: auto;
+    background-color: #f4f7f9; 
+  }
+
+  .content-section {
+    /* Styles for generic content sections if needed */
+  }
+  
+  .page-title {
+    font-size: 2em; /* Larger page titles */
+    color: #0A2540;
+    margin-bottom: 30px; /* Increased margin */
+    font-weight: 700; /* Bolder */
+  }
+
+  /* Dashboard View Specific Styles */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Slightly larger min card width */
+    gap: 30px; 
+  }
+
+  .dashboard-card {
+    background-color: #ffffff;
+    padding: 25px; /* Increased padding */
+    border-radius: 10px; /* More rounded corners */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Slightly more defined shadow */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .dashboard-card:hover {
+    transform: translateY(-5px); /* More noticeable hover effect */
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 18px; /* Increased margin */
+  }
+  .card-icon {
+    margin-right: 18px; /* Increased margin */
+    padding: 12px; /* Increased padding */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-icon svg {
+    width: 28px; /* Larger icons in cards */
+    height: 28px;
+  }
+  /* Icon specific colors */
+  .icon-units { background-color: #e0f7fa; color: #00796b; } 
+  .icon-payments { background-color: #fff3e0; color: #f57c00; } 
+  .icon-maintenance { background-color: #ffebee; color: #d32f2f; } 
+  .icon-users { background-color: #e3f2fd; color: #1976d2; } 
+
+  .card-title {
+    font-size: 1.2em; /* Larger card titles */
+    font-weight: 600;
+    color: #0A2540;
+  }
+
+  .card-content p {
+    font-size: 2.2em; 
+    font-weight: 700;
+    color: #1B4B70; 
+    margin-bottom: 10px; /* Increased margin */
+  }
+  .card-content .details {
+    font-size: 0.95em; /* Slightly larger detail text */
+    color: #555e68;
+    line-height: 1.5; /* Improved line height */
+  }
+  .card-content .details span {
+    display: block;
+    margin-bottom: 3px; /* Small space between detail lines */
+  }
+  
+  .card-footer {
+      margin-top: auto; 
+      padding-top: 18px; /* Increased padding */
+      border-top: 1px solid #e9edf0; /* Softer border */
+  }
+  .card-footer a {
+      color: #007bff; 
+      text-decoration: none;
+      font-size: 0.95em; 
+      font-weight: 500;
+      transition: color 0.2s ease;
+  }
+   .card-footer a:hover {
+      text-decoration: underline;
+      color: #0056b3; /* Darker blue on hover */
+   }
+
+
+  /* Responsive Design */
+  @media (max-width: 992px) { /* Adjusted breakpoint for main wrapper margin */
+    .main-wrapper.sidebar-open-desktop { /* New class for when sidebar should be open on desktop but screen is smaller */
+        margin-left: 260px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-sidebar {
+      transform: translateX(-100%); 
+      box-shadow: none; /* Remove shadow when collapsed overlay */
+    }
+    .dashboard-sidebar.open {
+      transform: translateX(0);
+      width: 260px; /* Keep width consistent or adjust as needed */
+      box-shadow: 2px 0 8px rgba(0,0,0,0.15); /* Add shadow when open on mobile */
+    }
+    .main-wrapper {
+      margin-left: 0 !important; /* Ensure no margin when sidebar is overlay or hidden */
+    }
+    .menu-toggle {
+      display: flex; /* Use flex for centering icon if needed */
+      align-items: center;
+      justify-content: center;
+    }
+    .header-title {
+        font-size: 1.2em; /* Adjusted for mobile */
+    }
+    .user-info .user-name, .user-info .user-role {
+        display: none; 
+    }
+    .user-info img {
+        margin-right: 0;
+    }
+    .logout-button span {
+        display: none; 
+    }
+    .logout-button svg {
+        margin-right: 0;
+    }
+     .logout-button {
+        padding: 8px; /* Smaller padding for icon-only button */
+    }
+    .dashboard-grid {
+      grid-template-columns: 1fr; 
+    }
+    .dashboard-header {
+        padding: 0 15px; /* Reduced padding for mobile header */
+    }
+    .header-right {
+        gap: 10px; /* Reduced gap for mobile */
+    }
+  }

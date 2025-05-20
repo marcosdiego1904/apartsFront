@@ -1,0 +1,68 @@
+/* Definición de una paleta de colores personalizada con tonos de azul más ricos */
+:root {
+    --color-primary-blue: #1a3b5d; /* Azul oscuro elegante */
+    --color-secondary-blue: #2c5282; /* Azul medio */
+    --color-accent-blue: #4299e1; /* Azul brillante para acentos */
+    --color-light-blue: #e2f0ff; /* Azul muy claro */
+    --color-white: #ffffff;
+    --color-gray-100: #f7fafc;
+    --color-gray-200: #edf2f7;
+    --color-gray-600: #718096;
+    --color-gray-700: #4a5568;
+    --color-gray-800: #2d3748;
+    --color-red-600: #e53e3e;
+    --color-red-700: #c53030;
+    --color-green-600: #38a169;
+    --color-yellow-600: #d69e2e;
+}
+
+/* Aplicar colores personalizados con Tailwind (ya definidos en el HTML original, pero se mantienen aquí como referencia o para usar directamente si no se usa el CDN de Tailwind) */
+/* .bg-primary-blue { background-color: var(--color-primary-blue); } */
+/* .text-primary-blue { color: var(--color-primary-blue); } */
+/* .bg-secondary-blue { background-color: var(--color-secondary-blue); } */
+/* .text-secondary-blue { color: var(--color-secondary-blue); } */
+/* .bg-accent-blue { background-color: var(--color-accent-blue); } */
+/* .text-accent-blue { color: var(--color-accent-blue); } */
+/* .bg-light-blue { background-color: var(--color-light-blue); } */
+/* .text-light-blue { color: var(--color-light-blue); } */
+/* .border-accent-blue { border-color: var(--color-accent-blue); } */
+
+
+/* Estilos para la barra lateral en móvil */
+.sidebar {
+    z-index: 50; /* Asegura que esté por encima del contenido principal */
+}
+
+/* Animación sutil de entrada para las tarjetas */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card-animation {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--color-gray-200);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--color-gray-600);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-gray-700);
+}
+
+/* Estilos base para el cuerpo, si no se aplican globalmente */
+body {
+    background-color: var(--color-gray-100);
+    font-family: sans-serif; /* O la fuente que prefieras */
+    line-height: normal;
+    letter-spacing: normal;
+    color: var(--color-gray-800);
+}
