@@ -1,7 +1,7 @@
 import { DashboardView } from "./Cards";
 import UnitList from "./UnitList";
-import UserManagement from "./userList";
 import './style1.css'
+import UserManagement from "./userList";
 
 interface MainContentProps {
     activeSection: string;
@@ -13,9 +13,9 @@ interface MainContentProps {
         case 'dashboard':
           return <DashboardView />;
         case 'users':
-          return 'hola'
+          return <UserManagement/>; // Ahora usa el componente UserList actualizado
         case 'units':
-          return <UnitList/>
+          return <UnitList/>;
         case 'payments':
           return <div><h2 className="page-title">Payment Tracking</h2><p>Content for Payment Tracking goes here...</p></div>;
         case 'maintenance':
