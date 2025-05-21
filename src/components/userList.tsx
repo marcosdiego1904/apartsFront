@@ -1,403 +1,686 @@
+// src/components/UserManagement.tsx
 import React, { useEffect, useState } from 'react';
-import { getAllUsers } from '../services/api';
-import type { User } from '../services/api';
-// Importamos los estilos desde un archivo separado
+import { getAllUsers, getUserById, createNewUser, updateExistingUser } from '../services/api';
+import type { User, CreateUserPayload } from '../services/api';
+import './style1.css';
+
+// Iconos SVG componentes
+const UserIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+  </svg>
+);
+
+const UsersIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2z"/>
+  </svg>
+);
+
+const EmailIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2zm13 2.383-4.758 2.855L15 11.114v-5.73zm-.034 6.878L9.271 8.82 8 9.583 6.728 8.82l-5.694 3.44A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.739zM1 11.114l4.758-2.876L1 5.383v5.73z"/>
+  </svg>
+);
+
+const KeyIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M0 8a4 4 0 0 1 7.465-2H14a.5.5 0 0 1 .354.146l1.5 1.5a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0L13 9.207l-.646.647a.5.5 0 0 1-.708 0L11 9.207l-.646.647a.5.5 0 0 1-.708 0L9 9.207l-.646.647A.5.5 0 0 1 8 10h-.535A4 4 0 0 1 0 8zm4-3a3 3 0 1 0 2.712 4.285A.5.5 0 0 1 7.163 9h.63l.853-.854a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.646-.647a.5.5 0 0 1 .708 0l.646.647.793-.793-1-1h-6.63a.5.5 0 0 1-.451-.285A3 3 0 0 0 4 5z"/>
+    <path d="M4 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/>
+    <path d="M9.5 6.5a1.5 1.5 0 0 1-1 1.415l.385 1.99a.5.5 0 0 1-.491.595h-.788a.5.5 0 0 1-.49-.595l.384-1.99a1.5 1.5 0 1 1 2-1.415z"/>
+  </svg>
+);
+
+const BuildingIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5ZM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5 5 5Z"/>
+  </svg>
+);
+
+const PhoneIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M3.654 1.328a.678.678 0 0 0-1.015-.063L1.605 2.3c-.483.484-.661 1.169-.45 1.77a17.568 17.568 0 0 0 4.168 6.608 17.569 17.569 0 0 0 6.608 4.168c.601.211 1.286.033 1.77-.45l1.034-1.034a.678.678 0 0 0-.063-1.015l-2.307-1.794a.678.678 0 0 0-.58-.122l-2.19.547a1.745 1.745 0 0 1-1.657-.459L5.482 8.062a1.745 1.745 0 0 1-.46-1.657l.548-2.19a.678.678 0 0 0-.122-.58L3.654 1.328zM1.884.511a1.745 1.745 0 0 1 2.612.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.678.678 0 0 0 .178.643l2.457 2.457a.678.678 0 0 0 .644.178l2.189-.547a1.745 1.745 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.634 18.634 0 0 1-7.01-4.42 18.634 18.634 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877L1.885.511z"/>
+  </svg>
+);
+
+const FamilyIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+    <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12.5A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5zM9.5 3A1.5 1.5 0 0 0 11 4.5h2v9.255S12 12 8 12s-5 1.755-5 1.755V2a1 1 0 0 1 1-1h5.5v2z"/>
+  </svg>
+);
+
+const CheckCircleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+    <path d="M10.97 4.97a.235.235 0 0 0-.02.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/>
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+  </svg>
+);
+
+const EditIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+  </svg>
+);
 
 const UserManagement: React.FC = () => {
+  // User list state
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  
+  // Modal states
+  const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  
+  // Add/Edit user form state
+  const [formData, setFormData] = useState<CreateUserPayload>({
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    role: 'tenant',
+    unit_id: null,
+    phone_number: '',
+    number_of_family_members: 0,
+    is_active: true
+  });
+  
+  // Toast notification state
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error', visible: boolean}>({
+    message: '',
+    type: 'success',
+    visible: false
+  });
 
+  // Fetch all users on component mount
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await getAllUsers();
-        setUsers(data);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Ocurrió un error desconocido al cargar usuarios.';
-        setError(errorMessage);
-        console.error("Error fetching users:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
   }, []);
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(user => {
-    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase();
-    const email = (user.email || '').toLowerCase();
-    const search = searchTerm.toLowerCase();
-    
-    return fullName.includes(search) || email.includes(search);
-  });
-
-  const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setShowEditModal(true);
+  // Fetch users function
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAllUsers();
+      setUsers(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred while loading users.');
+      console.error("Error fetching users:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddUser = () => {
-    setShowAddModal(true);
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target as HTMLInputElement;
+    
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData({
+        ...formData,
+        [name]: checked
+      });
+    } else if (name === 'unit_id') {
+      // Convert unit_id to number or null
+      setFormData({
+        ...formData,
+        [name]: value ? parseInt(value, 10) : null
+      });
+    } else if (name === 'number_of_family_members') {
+      // Convert to number
+      setFormData({
+        ...formData,
+        [name]: value ? parseInt(value, 10) : 0
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+  };
+
+  // Open Add User Modal
+  const openAddModal = () => {
+    // Reset form data
+    setFormData({
+      first_name: '',
+      last_name: '',
+      email: '',
+      password: '',
+      role: 'tenant',
+      unit_id: null,
+      phone_number: '',
+      number_of_family_members: 0,
+      is_active: true
+    });
+    setIsAddModalOpen(true);
   };
   
-  // Function skeletons - would be implemented in a real application
-  const handleDeleteUser = (userId: number) => {
-    console.log(`Delete user with ID: ${userId}`);
-    // In a real app, you would call an API and update the state
+  // Open Edit User Modal
+  const openEditModal = (user: User) => {
+    setSelectedUser(user);
+    // Populate form with user data
+    setFormData({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      password: '', // Don't include password for edit
+      role: user.role as 'manager' | 'tenant',
+      unit_id: user.unit_id,
+      phone_number: user.phone_number || '',
+      number_of_family_members: user.number_of_family_members || 0,
+      is_active: user.is_active || false
+    });
+    setIsEditModalOpen(true);
   };
 
-  const handleStatusToggle = (userId: number, currentStatus: boolean) => {
-    console.log(`Toggle status for user ${userId} from ${currentStatus} to ${!currentStatus}`);
-    // In a real app, you would call an API and update the state
+  // Close all modals
+  const closeModals = () => {
+    setIsAddModalOpen(false);
+    setIsEditModalOpen(false);
+    setSelectedUser(null);
   };
 
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Cargando usuarios...</p>
-      </div>
-    );
+  // Submit handler for adding a new user
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const newUser = await createNewUser(formData);
+      setUsers(prevUsers => [...prevUsers, newUser]);
+      closeModals();
+      showToast('User added successfully!', 'success');
+    } catch (err) {
+      console.error("Error adding user:", err);
+      showToast(err instanceof Error ? err.message : 'Failed to add user', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit handler for editing a user
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    
+    try {
+      setLoading(true);
+      
+      // Create a new payload omitting password if it's empty
+      const finalPayload = formData.password 
+        ? {...formData} 
+        : {
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            email: formData.email,
+            role: formData.role,
+            unit_id: formData.unit_id,
+            phone_number: formData.phone_number,
+            number_of_family_members: formData.number_of_family_members,
+            is_active: formData.is_active
+          };
+      
+      const updatedUser = await updateExistingUser(selectedUser.id, finalPayload);
+      
+      // Update users array with the edited user
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === updatedUser.id ? updatedUser : user
+        )
+      );
+      
+      closeModals();
+      showToast('User updated successfully!', 'success');
+    } catch (err) {
+      console.error("Error updating user:", err);
+      showToast(err instanceof Error ? err.message : 'Failed to update user', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle user active status
+  const toggleUserStatus = async (user: User) => {
+    try {
+      setLoading(true);
+      const updatedUser = await updateExistingUser(user.id, {
+        is_active: !user.is_active
+      });
+      
+      // Update users array with the updated user
+      setUsers(prevUsers => 
+        prevUsers.map(u => 
+          u.id === updatedUser.id ? updatedUser : u
+        )
+      );
+      
+      showToast(`User ${updatedUser.is_active ? 'activated' : 'deactivated'} successfully!`, 'success');
+    } catch (err) {
+      console.error("Error toggling user status:", err);
+      showToast(err instanceof Error ? err.message : 'Failed to update user status', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show toast notification
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({
+      message,
+      type,
+      visible: true
+    });
+    
+    // Hide toast after 3 seconds
+    setTimeout(() => {
+      setToast(prev => ({...prev, visible: false}));
+    }, 3000);
+  };
+
+  if (loading && users.length === 0) {
+    return <p>Loading users...</p>;
   }
 
-  if (error) {
-    return (
-      <div className="error-container">
-        <div className="error-icon">!</div>
-        <h3>Error al cargar usuarios</h3>
-        <p>{error}</p>
-        <button className="btn btn-primary">Reintentar</button>
-      </div>
-    );
+  if (error && users.length === 0) {
+    return <p>Error loading users: {error}</p>;
   }
 
   return (
-    <div className="user-management-container">
+    <div className="condo-panel-content-area">
+      {/* Page Header */}
       <div className="section-header">
-        <h2 className="page-title">Gestión de Usuarios</h2>
-        <div className="header-actions">
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Buscar usuarios..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-            <span className="search-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-            </span>
-          </div>
-          <button className="btn btn-primary add-user-btn" onClick={handleAddUser}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Añadir Usuario
-          </button>
-        </div>
+        <h1><UsersIcon /> User Management</h1>
+        <button className="btn btn-primary" onClick={openAddModal}>
+          <PlusIcon /> Add New User
+        </button>
       </div>
 
-      {/* User Stats Section */}
-      <div className="user-stats-section">
-        <div className="stat-card">
-          <div className="stat-icon icon-total-users">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <div className="stat-title">Total Usuarios</div>
-            <div className="stat-value">{users.length}</div>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-icon icon-managers">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="8.5" cy="7" r="4"></circle>
-              <polyline points="17 11 19 13 23 9"></polyline>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <div className="stat-title">Administradores</div>
-            <div className="stat-value">{users.filter(user => user.role === 'manager').length}</div>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-icon icon-tenants">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <div className="stat-title">Inquilinos</div>
-            <div className="stat-value">{users.filter(user => user.role === 'tenant').length}</div>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-icon icon-active">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-          </div>
-          <div className="stat-content">
-            <div className="stat-title">Usuarios Activos</div>
-            <div className="stat-value">{users.filter(user => user.is_active).length}</div>
-          </div>
-        </div>
-      </div>
-
+      {/* Users Table */}
       <div className="table-container">
-        {users.length === 0 ? (
-          <div className="empty-state">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <line x1="19" y1="8" x2="19" y2="14"></line>
-              <line x1="22" y1="11" x2="16" y2="11"></line>
-            </svg>
-            <h3>No hay usuarios registrados</h3>
-            <p>Añade un nuevo usuario para comenzar</p>
-            <button className="btn btn-primary" onClick={handleAddUser}>Añadir Usuario</button>
-          </div>
-        ) : (
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Unidad</th>
-                <th>Estado</th>
-                <th>Acciones</th>
+        <table className="users-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th><UserIcon /> Name</th>
+              <th><EmailIcon /> Email</th>
+              <th><ShieldIcon /> Role</th>
+              <th><BuildingIcon /> Unit</th>
+              <th><PhoneIcon /> Phone</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(user => (
+              <tr key={user.id}>
+                <td>{user.id}</td>
+                <td>{user.first_name} {user.last_name}</td>
+                <td>{user.email}</td>
+                <td>{user.role === 'manager' ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><ShieldIcon /> {user.role}</span>
+                  ) : (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><UserIcon /> {user.role}</span>
+                  )}
+                </td>
+                <td>{user.unit_id ? (
+                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><BuildingIcon /> {user.unit_id}</span>
+                    ) : '-'}
+                </td>
+                <td>{user.phone_number ? (
+                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><PhoneIcon /> {user.phone_number}</span>
+                    ) : '-'}
+                </td>
+                <td className="text-center">
+                  <span 
+                    className={`status-badge ${user.is_active ? 'status-active' : 'status-inactive'}`}
+                    onClick={() => toggleUserStatus(user)}
+                    title="Click to toggle status"
+                  >
+                    {user.is_active ? (
+                      <><CheckCircleIcon /> Active</>
+                    ) : (
+                      <><CloseIcon /> Inactive</>
+                    )}
+                  </span>
+                </td>
+                <td>
+                  <button 
+                    className="btn-icon" 
+                    onClick={() => openEditModal(user)}
+                    title="Edit user"
+                  >
+                    <EditIcon /> Edit
+                  </button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map(user => (
-                <tr key={user.id}>
-                  <td>{user.id}</td>
-                  <td className="user-name-cell">
-                    <div className="user-avatar">
-                      {user.first_name?.charAt(0)}{user.last_name?.charAt(0)}
-                    </div>
-                    <div className="user-name">
-                      <span>{user.first_name} {user.last_name}</span>
-                      {user.phone_number && (
-                        <span className="user-phone">{user.phone_number}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td>{user.email}</td>
-                  <td>
-                    <span className={`role-badge ${user.role === 'manager' ? 'role-manager' : 'role-tenant'}`}>
-                      {user.role === 'manager' ? 'Administrador' : 'Inquilino'}
-                    </span>
-                  </td>
-                  <td>{user.unit_id || 'No asignada'}</td>
-                  <td>
-                    <span 
-                      className={`status-badge ${user.is_active ? 'status-active' : 'status-inactive'}`}
-                      onClick={() => handleStatusToggle(user.id, !!user.is_active)}
-                    >
-                      {user.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="actions-cell">
-                    <button className="btn-icon edit-btn" onClick={() => handleEditUser(user)} title="Editar">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </button>
-                    <button className="btn-icon delete-btn" onClick={() => handleDeleteUser(user.id)} title="Eliminar">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                      </svg>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* Modal placeholders - would have full implementation in a real application */}
-      {showAddModal && (
-        <div className="modal-overlay">
+      {/* Add User Modal */}
+      {isAddModalOpen && (
+        <div className="modal-overlay active">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Añadir Nuevo Usuario</h3>
-              <button className="modal-close-btn" onClick={() => setShowAddModal(false)}>&times;</button>
+              <h3 className="modal-title"><UserIcon /> Add New User</h3>
+              <button className="modal-close-btn" onClick={closeModals}>&times;</button>
             </div>
-            <div className="modal-body">
-              <div className="input-group">
-                <label htmlFor="first_name">Nombre</label>
-                <input type="text" id="first_name" className="form-input" />
+            <form onSubmit={handleAddUser}>
+              <div className="form-grid form-grid-cols-2">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="first_name">
+                    <UserIcon /> First Name
+                  </label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    id="first_name"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="last_name">
+                    <UserIcon /> Last Name
+                  </label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    id="last_name"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="email">
+                    <EmailIcon /> Email
+                  </label>
+                  <input
+                    className="form-input"
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="password">
+                    <KeyIcon /> Password
+                  </label>
+                  <input
+                    className="form-input"
+                    type="password"
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required={isAddModalOpen} // Solo requerido para nuevos usuarios
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="role">
+                    <ShieldIcon /> Role
+                  </label>
+                  <select
+                    className="form-select"
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="tenant">Tenant</option>
+                    <option value="manager">Manager</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="unit_id">
+                    <BuildingIcon /> Unit ID
+                  </label>
+                  <input
+                    className="form-input"
+                    type="number"
+                    id="unit_id"
+                    name="unit_id"
+                    value={formData.unit_id || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="phone_number">
+                    <PhoneIcon /> Phone Number
+                  </label>
+                  <input
+                    className="form-input"
+                    type="tel"
+                    id="phone_number"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="number_of_family_members">
+                    <FamilyIcon /> Family Members
+                  </label>
+                  <input
+                    className="form-input"
+                    type="number"
+                    id="number_of_family_members"
+                    name="number_of_family_members"
+                    min="0"
+                    value={formData.number_of_family_members}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center' }}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={formData.is_active}
+                      onChange={handleInputChange}
+                    />
+                    <span style={{ marginLeft: '8px' }}>
+                      <CheckCircleIcon /> Active
+                    </span>
+                  </label>
+                </div>
               </div>
-              <div className="input-group">
-                <label htmlFor="last_name">Apellido</label>
-                <input type="text" id="last_name" className="form-input" />
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={closeModals}>Cancel</button>
+                <button type="submit" className="btn btn-primary">
+                  <PlusIcon /> Add User
+                </button>
               </div>
-              <div className="input-group">
-                <label htmlFor="email">Email</label>
-                <input type="email" id="email" className="form-input" />
-              </div>
-              <div className="input-group">
-                <label htmlFor="password">Contraseña</label>
-                <input type="password" id="password" className="form-input" />
-              </div>
-              <div className="input-group">
-                <label htmlFor="role">Rol</label>
-                <select id="role" className="form-select">
-                  <option value="tenant">Inquilino</option>
-                  <option value="manager">Administrador</option>
-                </select>
-              </div>
-              <div className="input-group">
-                <label htmlFor="unit_id">Unidad</label>
-                <select id="unit_id" className="form-select">
-                  <option value="">Sin asignar</option>
-                  <option value="1">Unidad 101</option>
-                  <option value="2">Unidad 102</option>
-                  <option value="3">Unidad 201</option>
-                </select>
-              </div>
-              <div className="input-group">
-                <label htmlFor="phone_number">Teléfono</label>
-                <input type="tel" id="phone_number" className="form-input" />
-              </div>
-              <div className="input-group checkbox-group">
-                <input type="checkbox" id="is_active" defaultChecked />
-                <label htmlFor="is_active">Usuario activo</label>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancelar</button>
-              <button className="btn btn-primary">Guardar</button>
-            </div>
+            </form>
           </div>
         </div>
       )}
 
-      {showEditModal && selectedUser && (
-        <div className="modal-overlay">
+      {/* Edit User Modal */}
+      {isEditModalOpen && selectedUser && (
+        <div className="modal-overlay active">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Editar Usuario</h3>
-              <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>&times;</button>
+              <h3 className="modal-title"><EditIcon /> Edit User</h3>
+              <button className="modal-close-btn" onClick={closeModals}>&times;</button>
             </div>
-            <div className="modal-body">
-              <div className="input-group">
-                <label htmlFor="edit_first_name">Nombre</label>
-                <input 
-                  type="text" 
-                  id="edit_first_name" 
-                  className="form-input"
-                  defaultValue={selectedUser.first_name} 
-                />
+            <form onSubmit={handleEditUser}>
+              <div className="form-grid form-grid-cols-2">
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit_first_name">
+                    <UserIcon /> First Name
+                  </label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    id="edit_first_name"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit_last_name">
+                    <UserIcon /> Last Name
+                  </label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    id="edit_last_name"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit_email">
+                    <EmailIcon /> Email
+                  </label>
+                  <input
+                    className="form-input"
+                    type="email"
+                    id="edit_email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit_password">
+                    <KeyIcon /> Password (Dejar en blanco para mantener actual)
+                  </label>
+                  <input
+                    className="form-input"
+                    type="password"
+                    id="edit_password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit_role">
+                    <ShieldIcon /> Role
+                  </label>
+                  <select
+                    className="form-select"
+                    id="edit_role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="tenant">Tenant</option>
+                    <option value="manager">Manager</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit_unit_id">
+                    <BuildingIcon /> Unit ID
+                  </label>
+                  <input
+                    className="form-input"
+                    type="number"
+                    id="edit_unit_id"
+                    name="unit_id"
+                    value={formData.unit_id || ''}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit_phone_number">
+                    <PhoneIcon /> Phone Number
+                  </label>
+                  <input
+                    className="form-input"
+                    type="tel"
+                    id="edit_phone_number"
+                    name="phone_number"
+                    value={formData.phone_number}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" htmlFor="edit_number_of_family_members">
+                    <FamilyIcon /> Family Members
+                  </label>
+                  <input
+                    className="form-input"
+                    type="number"
+                    id="edit_number_of_family_members"
+                    name="number_of_family_members"
+                    min="0"
+                    value={formData.number_of_family_members}
+                    onChange={handleInputChange}
+                  />
+                </div>
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center' }}>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name="is_active"
+                      checked={formData.is_active}
+                      onChange={handleInputChange}
+                    />
+                    <span style={{ marginLeft: '8px' }}>
+                      <CheckCircleIcon /> Active
+                    </span>
+                  </label>
+                </div>
               </div>
-              <div className="input-group">
-                <label htmlFor="edit_last_name">Apellido</label>
-                <input 
-                  type="text" 
-                  id="edit_last_name" 
-                  className="form-input"
-                  defaultValue={selectedUser.last_name} 
-                />
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={closeModals}>Cancel</button>
+                <button type="submit" className="btn btn-success">
+                  <EditIcon /> Update User
+                </button>
               </div>
-              <div className="input-group">
-                <label htmlFor="edit_email">Email</label>
-                <input 
-                  type="email" 
-                  id="edit_email" 
-                  className="form-input"
-                  defaultValue={selectedUser.email} 
-                />
-              </div>
-              <div className="input-group">
-                <label htmlFor="edit_password">Contraseña</label>
-                <input 
-                  type="password" 
-                  id="edit_password" 
-                  className="form-input"
-                  placeholder="Dejar en blanco para no cambiar" 
-                />
-              </div>
-              <div className="input-group">
-                <label htmlFor="edit_role">Rol</label>
-                <select 
-                  id="edit_role" 
-                  className="form-select"
-                  defaultValue={selectedUser.role}
-                >
-                  <option value="tenant">Inquilino</option>
-                  <option value="manager">Administrador</option>
-                </select>
-              </div>
-              <div className="input-group">
-                <label htmlFor="edit_unit_id">Unidad</label>
-                <select 
-                  id="edit_unit_id" 
-                  className="form-select"
-                  defaultValue={selectedUser.unit_id || ""}
-                >
-                  <option value="">Sin asignar</option>
-                  <option value="1">Unidad 101</option>
-                  <option value="2">Unidad 102</option>
-                  <option value="3">Unidad 201</option>
-                </select>
-              </div>
-              <div className="input-group">
-                <label htmlFor="edit_phone_number">Teléfono</label>
-                <input 
-                  type="tel" 
-                  id="edit_phone_number" 
-                  className="form-input"
-                  defaultValue={selectedUser.phone_number || ""} 
-                />
-              </div>
-              <div className="input-group checkbox-group">
-                <input 
-                  type="checkbox" 
-                  id="edit_is_active" 
-                  defaultChecked={selectedUser.is_active} 
-                />
-                <label htmlFor="edit_is_active">Usuario activo</label>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Cancelar</button>
-              <button className="btn btn-primary">Actualizar</button>
-            </div>
+            </form>
           </div>
         </div>
       )}
+
+      {/* Toast Message */}
+      <div className={`toast-message ${toast.visible ? 'show' : ''} bg-${toast.type}`}>
+        {toast.visible && toast.type === 'success' && <CheckCircleIcon />}
+        {toast.visible && toast.type === 'error' && <CloseIcon />}
+        {toast.message}
+      </div>
     </div>
   );
 };

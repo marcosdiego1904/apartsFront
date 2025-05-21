@@ -59,3 +59,30 @@ export interface MaintenanceRequest {
   closedAt?: string | null; 
 }
 
+// Update your interface definitions in src/services/api.ts
+
+// Type for CreateUnitPayload
+export type CreateUnitPayload = {
+    unit_number: string;
+    building?: string;
+    // Change these to explicitly allow undefined but not null
+    floor?: number | undefined;
+    square_footage?: string | number | undefined;
+    number_of_bedrooms?: number | undefined;
+    number_of_bathrooms?: string | number | undefined;
+    is_occupied?: boolean;
+};
+
+// Type for CreateUserPayload
+export type CreateUserPayload = {
+    first_name: string;
+    last_name: string;
+    email: string;
+    // Make password optional for update scenarios
+    password?: string;
+    role: 'manager' | 'tenant';
+    unit_id?: number | null;
+    phone_number?: string;
+    number_of_family_members?: number;
+    is_active?: boolean;
+};

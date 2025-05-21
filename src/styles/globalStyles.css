@@ -1044,7 +1044,7 @@
     gap: 16px;
   }
 }
-}
+
 
 .modal-content {
   background-color: white;
@@ -1185,4 +1185,89 @@
     width: 95%;
     max-height: 85vh;
   }
+}
+/* Añade estos estilos a tu archivo style1.css para mejorar la apariencia de los iconos */
+
+/* Mejora de los iconos en las etiquetas */
+.form-label svg, button svg, th svg {
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+/* Mejora de los iconos en los badges de estado */
+.status-badge svg {
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Mejora de los iconos en los mensajes toast */
+.toast-message svg {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Mejora de los iconos en los encabezados */
+h1 svg, h2 svg, h3 svg {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Hover effect para botones con iconos */
+.btn-icon:hover svg, 
+.btn-primary:hover svg,
+.btn-secondary:hover svg,
+.btn-success:hover svg {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Estilo para el título de la página con icono */
+.section-header h1 svg {
+  margin-right: 10px;
+  color: #0A2540;
+}
+
+/* Animación suave para los toast message */
+.toast-message.show {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-50%) translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Estilos para las tablas con iconos */
+.users-table th svg {
+  color: #718096;
+}
+
+/* Mejora de los iconos en la tabla */
+.users-table td svg {
+  vertical-align: middle;
+  margin-right: 3px;
+}
+
+/* Ajuste para alinear iconos dentro de inputs */
+.form-group svg {
+  color: #4A5568;
+}
+
+/* Mejora para badges con iconos */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }

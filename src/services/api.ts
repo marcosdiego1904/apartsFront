@@ -100,19 +100,34 @@ export const getUserById = async (id: number): Promise<User> => {
     return response.data;
 };
 
+// Add these functions to your existing src/services/api.ts file
+
+// Additional user functions to create, update, and delete users
 export const createNewUser = async (userData: CreateUserPayload): Promise<User> => {
     const response = await axios.post<User>(`${API_BASE_URL}/users`, userData);
     return response.data;
 };
 
-// Actualizar el estado de un usuario (activo/inactivo)
+export const updateExistingUser = async (id: number, userData: Partial<CreateUserPayload>): Promise<User> => {
+    const response = await axios.put<User>(`${API_BASE_URL}/users/${id}`, userData);
+    return response.data;
+};
+
 export const updateUserStatus = async (id: number, isActive: boolean): Promise<User> => {
     const response = await axios.patch<User>(`${API_BASE_URL}/users/${id}/status`, { is_active: isActive });
     return response.data;
 };
 
-// Actualizar datos de un usuario existente
-export const updateExistingUser = async (id: number, userData: UpdateUserPayload): Promise<User> => {
-    const response = await axios.put<User>(`${API_BASE_URL}/users/${id}`, userData);
+export const deleteUserById = async (id: number): Promise<void> => {
+    await axios.delete(`${API_BASE_URL}/users/${id}`);
+};
+
+// Additional unit functions
+export const updateExistingUnit = async (id: number, unitData: Partial<CreateUnitPayload>): Promise<Unit> => {
+    const response = await axios.put<Unit>(`${API_BASE_URL}/units/${id}`, unitData);
     return response.data;
+};
+
+export const deleteUnitById = async (id: number): Promise<void> => {
+    await axios.delete(`${API_BASE_URL}/units/${id}`);
 };
