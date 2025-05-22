@@ -206,21 +206,55 @@ const UserManagement: React.FC = () => {
   };
 
   // Submit handler for adding a new user
-  const handleAddUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      const newUser = await createNewUser(formData);
-      setUsers(prevUsers => [...prevUsers, newUser]);
-      closeModals();
-      showToast('User added successfully!', 'success');
-    } catch (err) {
-      console.error("Error adding user:", err);
-      showToast(err instanceof Error ? err.message : 'Failed to add user', 'error');
-    } finally {
-      setLoading(false);
+ // Actualización del handleAddUser en userList.tsx
+// Submit handler for adding a new user
+const handleAddUser = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    setLoading(true);
+    
+    // Validaciones adicionales antes de enviar
+    if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim() || !formData.password.trim()) {
+      showToast('All required fields must be filled', 'error');
+      return;
     }
-  };
+
+    console.log('Sending user data:', {
+      ...formData,
+      password: '[HIDDEN]' // No mostrar la contraseña en logs
+    });
+
+    const newUser = await createNewUser(formData);
+    setUsers(prevUsers => [...prevUsers, newUser]);
+    closeModals();
+    showToast('User added successfully!', 'success');
+  } catch (err) {
+    console.error("Error adding user:", err);
+    
+    // Mejor manejo de errores de Axios
+    if (err.response) {
+      // El servidor respondió con un código de estado fuera del rango 2xx
+      console.error('Response data:', err.response.data);
+      console.error('Response status:', err.response.status);
+      console.error('Response headers:', err.response.headers);
+      
+      const errorMessage = err.response.data?.message || 
+                          err.response.data?.error || 
+                          `Server error: ${err.response.status}`;
+      showToast(errorMessage, 'error');
+    } else if (err.request) {
+      // La petición fue hecha pero no se recibió respuesta
+      console.error('Request made but no response received:', err.request);
+      showToast('No response from server. Please check your connection.', 'error');
+    } else {
+      // Algo más causó el error
+      console.error('Error setting up request:', err.message);
+      showToast(err.message || 'An unexpected error occurred', 'error');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Submit handler for editing a user
   const handleEditUser = async (e: React.FormEvent) => {
