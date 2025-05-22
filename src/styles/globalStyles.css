@@ -1113,3 +1113,207 @@ body {
   border: 1px solid red; 
 }
 */
+/* Estilos adicionales para la funcionalidad de eliminar usuario */
+/* Añadir estos estilos al final de style1.css o globalStyles.css */
+
+/* Botón de peligro/eliminar */
+.btn-danger {
+  background-color: #e53e3e;
+  color: white;
+  border: 1px solid #e53e3e;
+}
+
+.btn-danger:hover {
+  background-color: #c53030;
+  border-color: #c53030;
+}
+
+.btn-danger:focus {
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.2);
+}
+
+/* Modal footer con distribución espaciada */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Cuando hay botón de eliminar a la izquierda */
+.modal-footer .btn-danger {
+  margin-right: auto; /* Empuja el botón de eliminar hacia la izquierda */
+}
+
+/* Espaciador flexible para separar botones */
+.modal-footer > div[style*="flex: 1"] {
+  flex: 1;
+}
+
+/* Estilos específicos para el modal de confirmación de eliminación */
+.modal-content[style*="maxWidth"] .modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Warning icon styling */
+.modal-content .warning-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.modal-content .warning-icon-container {
+  background-color: #fff5f5;
+  padding: 12px;
+  border-radius: 50%;
+  margin-right: 16px;
+  color: #e53e3e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+}
+
+/* Warning message box */
+.warning-message-box {
+  background-color: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.warning-message-box p {
+  margin: 0;
+  color: #c53030;
+  font-size: 0.9rem;
+}
+
+.warning-message-box strong {
+  font-weight: 600;
+}
+
+/* Lista de elementos a eliminar */
+.delete-items-list {
+  font-size: 0.9rem;
+  color: #4a5568;
+  margin: 0;
+}
+
+.delete-items-list p {
+  margin: 8px 0;
+}
+
+.delete-items-list ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.delete-items-list li {
+  margin: 4px 0;
+}
+
+/* User info en modal de confirmación */
+.delete-user-info h4 {
+  margin: 0 0 4px 0;
+  color: #1a202c;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.delete-user-info p {
+  margin: 0;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+/* Responsive para modales de confirmación */
+@media (max-width: 768px) {
+  .modal-content[style*="maxWidth"] {
+    width: 95%;
+    max-width: none;
+    margin: 0 10px;
+  }
+  
+  .warning-section {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .warning-icon-container {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+  
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  
+  .modal-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .modal-footer .btn-danger {
+    margin-right: 0;
+    order: -1; /* Pone el botón de eliminar al final en móvil */
+  }
+}
+
+/* Hover effects para botones en modal */
+.modal-footer .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.modal-footer .btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
+}
+
+/* Estados de loading para botones */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Animación para modal de confirmación */
+.modal-overlay.active .modal-content[style*="maxWidth"] {
+  animation: modalOpenWarning 0.3s ease-out forwards;
+}
+
+@keyframes modalOpenWarning {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Íconos en botones con mejor alineación */
+.btn svg {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Asegurar que los íconos no se compriman */
+.btn svg {
+  flex-shrink: 0;
+}

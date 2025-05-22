@@ -1,6 +1,6 @@
 // src/components/UserManagement.tsx
 import React, { useEffect, useState } from 'react';
-import { getAllUsers, getUserById, createNewUser, updateExistingUser } from '../services/api';
+import { getAllUsers, createNewUser, updateExistingUser, deleteUserById } from '../services/api';
 import type { User, CreateUserPayload } from '../services/api';
 import './style1.css';
 
@@ -82,6 +82,21 @@ const EditIcon = () => (
   </svg>
 );
 
+// Nuevo icono para eliminar
+const TrashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+    <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+  </svg>
+);
+
+// Nuevo icono de advertencia para confirmación
+const WarningIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+  </svg>
+);
+
 const UserManagement: React.FC = () => {
   // User list state
   const [users, setUsers] = useState<User[]>([]);
@@ -91,6 +106,7 @@ const UserManagement: React.FC = () => {
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
   // Add/Edit user form state
@@ -198,63 +214,67 @@ const UserManagement: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
+  // Open Delete Confirmation Modal
+  const openDeleteConfirm = () => {
+    setIsDeleteConfirmOpen(true);
+  };
+
   // Close all modals
   const closeModals = () => {
     setIsAddModalOpen(false);
     setIsEditModalOpen(false);
+    setIsDeleteConfirmOpen(false);
     setSelectedUser(null);
   };
 
   // Submit handler for adding a new user
- // Actualización del handleAddUser en userList.tsx
-// Submit handler for adding a new user
-const handleAddUser = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    setLoading(true);
-    
-    // Validaciones adicionales antes de enviar
-    if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim() || !formData.password.trim()) {
-      showToast('All required fields must be filled', 'error');
-      return;
-    }
-
-    console.log('Sending user data:', {
-      ...formData,
-      password: '[HIDDEN]' // No mostrar la contraseña en logs
-    });
-
-    const newUser = await createNewUser(formData);
-    setUsers(prevUsers => [...prevUsers, newUser]);
-    closeModals();
-    showToast('User added successfully!', 'success');
-  } catch (err) {
-    console.error("Error adding user:", err);
-    
-    // Mejor manejo de errores de Axios
-    if (err.response) {
-      // El servidor respondió con un código de estado fuera del rango 2xx
-      console.error('Response data:', err.response.data);
-      console.error('Response status:', err.response.status);
-      console.error('Response headers:', err.response.headers);
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
       
-      const errorMessage = err.response.data?.message || 
-                          err.response.data?.error || 
-                          `Server error: ${err.response.status}`;
-      showToast(errorMessage, 'error');
-    } else if (err.request) {
-      // La petición fue hecha pero no se recibió respuesta
-      console.error('Request made but no response received:', err.request);
-      showToast('No response from server. Please check your connection.', 'error');
-    } else {
-      // Algo más causó el error
-      console.error('Error setting up request:', err.message);
-      showToast(err.message || 'An unexpected error occurred', 'error');
+      // Validaciones adicionales antes de enviar
+      if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim() || !formData.password.trim()) {
+        showToast('All required fields must be filled', 'error');
+        return;
+      }
+
+      console.log('Sending user data:', {
+        ...formData,
+        password: '[HIDDEN]' // No mostrar la contraseña en logs
+      });
+
+      const newUser = await createNewUser(formData);
+      setUsers(prevUsers => [...prevUsers, newUser]);
+      closeModals();
+      showToast('User added successfully!', 'success');
+    } catch (err: any) {
+      console.error("Error adding user:", err);
+      
+      // Mejor manejo de errores de Axios
+      if (err.response) {
+        // El servidor respondió con un código de estado fuera del rango 2xx
+        console.error('Response data:', err.response.data);
+        console.error('Response status:', err.response.status);
+        console.error('Response headers:', err.response.headers);
+        
+        const errorMessage = err.response.data?.message || 
+                            err.response.data?.error || 
+                            `Server error: ${err.response.status}`;
+        showToast(errorMessage, 'error');
+      } else if (err.request) {
+        // La petición fue hecha pero no se recibió respuesta
+        console.error('Request made but no response received:', err.request);
+        showToast('No response from server. Please check your connection.', 'error');
+      } else {
+        // Algo más causó el error
+        console.error('Error setting up request:', err.message);
+        showToast(err.message || 'An unexpected error occurred', 'error');
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Submit handler for editing a user
   const handleEditUser = async (e: React.FormEvent) => {
@@ -292,6 +312,36 @@ const handleAddUser = async (e: React.FormEvent) => {
     } catch (err) {
       console.error("Error updating user:", err);
       showToast(err instanceof Error ? err.message : 'Failed to update user', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle delete user
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    
+    try {
+      setLoading(true);
+      
+      await deleteUserById(selectedUser.id);
+      
+      // Remove user from the users array
+      setUsers(prevUsers => 
+        prevUsers.filter(user => user.id !== selectedUser.id)
+      );
+      
+      closeModals();
+      showToast('User deleted successfully!', 'success');
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      
+      // Manejo de errores específicos para eliminación
+      if (err instanceof Error && err.message.includes('associated')) {
+        showToast('Cannot delete user: User has associated data that must be removed first.', 'error');
+      } else {
+        showToast(err instanceof Error ? err.message : 'Failed to delete user', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -699,12 +749,86 @@ const handleAddUser = async (e: React.FormEvent) => {
                 </div>
               </div>
               <div className="modal-footer">
+                <button type="button" className="btn btn-danger" onClick={openDeleteConfirm}>
+                  <TrashIcon /> Delete User
+                </button>
+                <div style={{ flex: 1 }}></div>
                 <button type="button" className="btn btn-secondary" onClick={closeModals}>Cancel</button>
                 <button type="submit" className="btn btn-success">
                   <EditIcon /> Update User
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && selectedUser && (
+        <div className="modal-overlay active">
+          <div className="modal-content" style={{ maxWidth: '450px' }}>
+            <div className="modal-header">
+              <h3 className="modal-title" style={{ color: '#e53e3e' }}>
+                <WarningIcon /> Confirm Delete
+              </h3>
+              <button className="modal-close-btn" onClick={closeModals}>&times;</button>
+            </div>
+            <div style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ 
+                  backgroundColor: '#fff5f5', 
+                  padding: '12px', 
+                  borderRadius: '50%', 
+                  marginRight: '16px',
+                  color: '#e53e3e'
+                }}>
+                  <WarningIcon />
+                </div>
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0', color: '#1a202c' }}>
+                    Delete User: {selectedUser.first_name} {selectedUser.last_name}
+                  </h4>
+                  <p style={{ margin: 0, color: '#718096', fontSize: '0.9rem' }}>
+                    {selectedUser.email}
+                  </p>
+                </div>
+              </div>
+              
+              <div style={{ 
+                backgroundColor: '#fff5f5', 
+                border: '1px solid #fed7d7', 
+                borderRadius: '8px', 
+                padding: '12px', 
+                marginBottom: '16px' 
+              }}>
+                <p style={{ margin: 0, color: '#c53030', fontSize: '0.9rem' }}>
+                  <strong>Warning:</strong> This action cannot be undone. All data associated with this user will be permanently deleted.
+                </p>
+              </div>
+
+              <div style={{ fontSize: '0.9rem', color: '#4a5568' }}>
+                <p style={{ margin: '8px 0' }}>This will remove:</p>
+                <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+                  <li>User account and profile information</li>
+                  <li>Associated payment records</li>
+                  <li>Maintenance requests and history</li>
+                  <li>Access permissions and authentication data</li>
+                </ul>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={closeModals}>
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-danger" 
+                onClick={handleDeleteUser}
+                style={{ backgroundColor: '#e53e3e', borderColor: '#e53e3e' }}
+              >
+                <TrashIcon /> Yes, Delete User
+              </button>
+            </div>
           </div>
         </div>
       )}

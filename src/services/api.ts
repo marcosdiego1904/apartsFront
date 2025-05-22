@@ -117,11 +117,6 @@ export const updateUserStatus = async (id: number, isActive: boolean): Promise<U
     const response = await axios.patch<User>(`${API_BASE_URL}/users/${id}/status`, { is_active: isActive });
     return response.data;
 };
-
-export const deleteUserById = async (id: number): Promise<void> => {
-    await axios.delete(`${API_BASE_URL}/users/${id}`);
-};
-
 // Additional unit functions
 export const updateExistingUnit = async (id: number, unitData: Partial<CreateUnitPayload>): Promise<Unit> => {
     const response = await axios.put<Unit>(`${API_BASE_URL}/units/${id}`, unitData);
@@ -130,4 +125,9 @@ export const updateExistingUnit = async (id: number, unitData: Partial<CreateUni
 
 export const deleteUnitById = async (id: number): Promise<void> => {
     await axios.delete(`${API_BASE_URL}/units/${id}`);
+};
+// Añadir esta función a src/services/api.ts si no existe
+
+export const deleteUserById = async (id: number): Promise<void> => {
+    await axios.delete(`${API_BASE_URL}/users/${id}`);
 };
