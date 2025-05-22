@@ -4,7 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { LoginPage } from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { DashboardManager } from './components/DashoardManager';
-import { TenantDashboard } from './components/tenantDasboard';
+import  TenantDashboard  from './components/tenantDasboard';
 import './styles/globalStyles.css'
 
 function App() {
