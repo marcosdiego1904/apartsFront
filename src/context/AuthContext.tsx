@@ -1,24 +1,19 @@
-// src/contexts/AuthContext.tsx
+// src/context/AuthContext.tsx
 import { createContext, useState, useEffect, type ReactNode} from 'react';
-import { login as authServiceLogin, logout as authServiceLogout} from '../services/authService'; // Importa el servicio real
-
+import { login as authServiceLogin, logout as authServiceLogout} from '../services/authService';
 
 // 1. Define la interfaz para el valor que proporcionará el contexto
 interface AuthContextValue {
   isAuthenticated: boolean;
   user: User | null;
   token: string | null;
-  isLoading: boolean; // Renombrado a isLoading para claridad
-  error: string | null; // Para manejar errores a nivel de contexto si aplica
-  login: (credentials: any) => Promise<void>; // Función para iniciar sesión (recibe credenciales)
-  logout: () => Promise<void>; // Función para cerrar sesión
-  // Opcional: Función para establecer el usuario si ya tienes un token (ej. desde localStorage)
-  // checkAuthStatus: () => Promise<void>;
+  isLoading: boolean;
+  error: string | null;
+  login: (credentials: any) => Promise<{ redirectTo: string }>; // Retorna la ruta de redirección
+  logout: () => Promise<void>;
 }
 
-// 2. Define el valor por defecto del contexto (debe coincidir con la interfaz)
-// Este valor solo se usa si no hay un Provider arriba en el árbol.
-// Ponemos valores que arrojen errores al intentar usarlos para debugging.
+// 2. Define el valor por defecto del contexto
 const defaultAuthContextValue: AuthContextValue = {
   isAuthenticated: false,
   user: null,
@@ -27,116 +22,119 @@ const defaultAuthContextValue: AuthContextValue = {
   error: null,
   login: async () => { throw new Error('AuthContext provider not found'); },
   logout: async () => { throw new Error('AuthContext provider not found'); },
-  // checkAuthStatus: async () => { throw new Error('AuthContext provider not found'); },
 };
 
 // 3. Crea el contexto con el valor por defecto tipado
 const AuthContext = createContext<AuthContextValue>(defaultAuthContextValue);
 
 type Props = { children: ReactNode }
-// 4. Crea el componente Provider (este es el importante)
+
+// 4. Función para determinar la ruta de redirección basada en el rol
+const getRedirectPath = (role: string): string => {
+  switch (role) {
+    case 'manager':
+      return '/manager/dashboard';
+    case 'tenant':
+      return '/tenant/dashboard';
+    default:
+      return '/dashboard';
+  }
+};
 
 export const AuthProvider = ({ children }: Props) => {
-  // Aquí mantienes el estado real de la autenticación
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Empezamos cargando para checkAuthStatus
-  const [error, setError] = useState<string | null>(null); // Para errores globales de auth
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // --- Lógica para verificar sesión al cargar la app (usando useEffect) ---
+  // --- Lógica para verificar sesión al cargar la app ---
   useEffect(() => {
     const checkAuthStatus = async () => {
       const storedToken = localStorage.getItem('authToken');
-      if (storedToken) {
-        // TODO: Aquí deberías tener una función en authService para
-        // validar el token o obtener el usuario usando el token.
-        // Por ahora, simularemos que si hay un token, el usuario está autenticado
-        // En un caso real, llamarías a una API /me o similar.
+      const storedUser = localStorage.getItem('authUser');
+      
+      if (storedToken && storedUser) {
         console.log("Checking for existing token...");
         setIsLoading(true);
+        
         try {
-            // Simulamos la verificación del token
-            await new Promise(resolve => setTimeout(resolve, 500)); // Latencia
+          await new Promise(resolve => setTimeout(resolve, 500)); // Latencia simulada
 
-            // TODO: Reemplazar con llamada a authService.verifyToken(storedToken) o getUserWithToken(storedToken)
-            // Simulamos un usuario si hay un token
-             const simulatedUser: User = {
-                 id: 'user-from-storage',
-                 username: 'logged_in_user',
-                 role: 'tenant' // O el rol que necesites simular
-             };
-
-            setToken(storedToken);
-            setUser(simulatedUser);
-            setIsAuthenticated(true);
-            console.log("Existing token found and user set.");
+          const parsedUser: User = JSON.parse(storedUser);
+          
+          setToken(storedToken);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+          console.log("Existing token found and user set:", parsedUser);
 
         } catch (err) {
-            console.error("Token verification failed:", err);
-            localStorage.removeItem('authToken'); // Limpiar token inválido
-            setIsAuthenticated(false);
-            setUser(null);
-            setToken(null);
-             // No setting error state here usually, just log out
+          console.error("Token verification failed:", err);
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('authUser');
+          setIsAuthenticated(false);
+          setUser(null);
+          setToken(null);
         } finally {
-            setIsLoading(false);
+          setIsLoading(false);
         }
-
       } else {
-        setIsLoading(false); // No hay token, terminamos la carga
+        setIsLoading(false);
       }
     };
 
     checkAuthStatus();
-  }, []); // El array vacío asegura que esto solo se ejecute una vez al montar
+  }, []);
 
-  // --- Funciones login y logout que actualizarán este estado ---
-
-  // Esta función será llamada desde LoginPage (a través del hook useAuth)
-  const login = async (credentials: any) => { // Usar la interfaz Credentials si la importas
-     setError(null); // Limpiar errores previos de login
+  // --- Función de login ---
+  const login = async (credentials: any): Promise<{ redirectTo: string }> => {
+    setError(null);
+    
     try {
-      setIsLoading(true); // Poner loading mientras se llama al servicio
-      const authData = await authServiceLogin(credentials); // Llama al servicio real
+      setIsLoading(true);
+      const authData = await authServiceLogin(credentials);
 
-      localStorage.setItem('authToken', authData.token); // Guarda el token (si aplica)
+      // Guardar tanto el token como los datos del usuario
+      localStorage.setItem('authToken', authData.token);
+      localStorage.setItem('authUser', JSON.stringify(authData.user));
+      
       setToken(authData.token);
       setUser(authData.user);
       setIsAuthenticated(true);
-      console.log("AuthContext updated after login success.");
+      
+      console.log("AuthContext updated after login success:", authData.user);
+
+      // Determinar la ruta de redirección basada en el rol
+      const redirectTo = getRedirectPath(authData.user.role);
+      
+      return { redirectTo };
 
     } catch (err) {
       console.error("AuthContext login failed:", err);
-       // Pasa el error para que LoginPage lo muestre si es necesario,
-       // o maneja el error globalmente aquí si prefieres
       setError(err instanceof Error ? err.message : 'An unexpected error occurred during login.');
-       setIsAuthenticated(false); // Asegurar que el estado sea falso en caso de error
-       setUser(null);
-       setToken(null);
-       localStorage.removeItem('authToken'); // Limpiar cualquier token residual
-       throw err; // Re-lanza el error para que el componente que llamó (LoginPage) pueda manejarlo también
+      setIsAuthenticated(false);
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('authUser');
+      throw err;
     } finally {
-        setIsLoading(false); // Quitar loading
+      setIsLoading(false);
     }
   };
 
-  // Esta función será llamada desde cualquier parte de la app (a través del hook useAuth)
+  // --- Función de logout ---
   const logout = async () => {
-    //TODO: Si tu backend tiene un endpoint de logout, llámalo aquí
-     await authServiceLogout(); // Llama al servicio real (si implementaste logout)
+    await authServiceLogout();
 
-    localStorage.removeItem('authToken'); // Limpia el token del storage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
     setToken(null);
     setUser(null);
     setIsAuthenticated(false);
-    setError(null); // Limpia cualquier error
-     console.log("AuthContext logout successful.");
-
-     // TODO: Redirigir al usuario a la página de login después del logout
-     // Esto lo harás típicamente en un useEffect que reaccione a isAuthenticated === false
+    setError(null);
+    console.log("AuthContext logout successful.");
   };
-
 
   // --- Define el valor que se pasará a través del contexto ---
   const contextValue: AuthContextValue = {
@@ -144,12 +142,11 @@ export const AuthProvider = ({ children }: Props) => {
     user,
     token,
     isLoading,
-    error, // Incluye el error en el valor del contexto
-    login, // Pasa la función login definida en este Provider
-    logout, // Pasa la función logout definida en este Provider
+    error,
+    login,
+    logout,
   };
 
-  // 5. Retorna el Provider, envolviendo a los hijos y pasando el valor
   return (
     <AuthContext.Provider value={contextValue}>
       {children}
@@ -157,18 +154,16 @@ export const AuthProvider = ({ children }: Props) => {
   );
 };
 
-// --- Ahora creamos el hook personalizado useAuth ---
-// src/hooks/useAuth.ts
-import { useContext } from 'react'; // Importa el contexto creado
+// --- Hook personalizado useAuth ---
+import { useContext } from 'react';
 import type { User} from '../types';
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
 
-  // Opcional: Verifica si el hook se usa dentro del Provider
-  if (context === defaultAuthContextValue) { // Compara con el valor por defecto
+  if (context === defaultAuthContextValue) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
 
-  return context; // Retorna el valor del contexto
+  return context;
 };
