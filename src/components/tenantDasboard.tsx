@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-
 interface NotificationItem {
   id: number;
   type: 'info' | 'success' | 'warning' | 'error';
@@ -169,8 +168,10 @@ const TenantDashboard: React.FC = () => {
           </div>
         </header>
 
-        {/* Quick Stats */}
-        <div className="quick-stats">
+        {/* Content Wrapper with Scroll */}
+        <div className="content-wrapper">
+          {/* Quick Stats */}
+          <div className="quick-stats">
           <div className="stat-card stat-payment">
             <div className="stat-icon">💰</div>
             <div className="stat-content">
@@ -368,6 +369,7 @@ const TenantDashboard: React.FC = () => {
               </div>
             </div>
           </section>
+        </div>
         </div>
       </div>
     </div>
