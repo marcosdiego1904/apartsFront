@@ -86,3 +86,27 @@ export type CreateUserPayload = {
     number_of_family_members?: number;
     is_active?: boolean;
 };
+
+// --- Interfaz para Registros de Pago de Alquiler (Historial del Inquilino) ---
+export interface PaymentRecordProperties { // Nombre modificado para evitar colisión con Payment existente
+  id: string;
+  date: string; // Fecha legible del pago
+  amount: number;
+  concept: string; // Ej: "Alquiler Mayo 2024"
+  status: 'completed' | 'pending' | 'failed' | 'reverted';
+  tenantId: string;
+  tenantName: string;
+}
+
+// --- Interfaz para Cargos Adicionales ---
+export interface ChargeRecord {
+  id: string;
+  tenantId: string;
+  tenantName: string; 
+  amount: number;
+  concept: string; // Ej: "Reparación ventana", "Multa por ruido"
+  dateAssigned: string; // Fecha legible de asignación
+  dateAssignedISO: string; // Fecha ISO para ordenación/procesamiento
+  status: 'pending' | 'paid';
+  paymentId?: string; // ID del PaymentRecordProperties que saldó este cargo
+}
