@@ -1,6 +1,7 @@
 import { DashboardView } from "./Cards";
 import EnhancedUnitList from '../components/UnitList';
 import UserManagement from "../components/userList";
+import Payments from "./Payments";
 import './style1.css'
 
 interface MainContentProps {
@@ -17,7 +18,7 @@ interface MainContentProps {
         case 'units':
           return <EnhancedUnitList />;
         case 'payments':
-          return <div><h2 className="page-title">Payment Tracking</h2><p>Content for Payment Tracking goes here...</p></div>;
+          return <Payments />;
         case 'maintenance':
           return <div><h2 className="page-title">Maintenance Requests</h2><p>Content for Maintenance Requests goes here...</p></div>;
         default:

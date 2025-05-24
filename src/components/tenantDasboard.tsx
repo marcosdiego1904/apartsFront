@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Payments from './Payments'; // Import the Payments component
 
 interface NotificationItem {
   id: number;
@@ -25,9 +26,13 @@ interface MaintenanceRequest {
   priority: 'low' | 'medium' | 'high';
 }
 
+// Define a type for the possible views
+type ActiveView = 'dashboard' | 'payments' | 'maintenance' | 'documents' | 'messages' | 'profile';
+
 const TenantDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeView, setActiveView] = useState<ActiveView>('dashboard'); // State for active view
   
   // Update time every minute
   useEffect(() => {
@@ -87,6 +92,12 @@ const TenantDashboard: React.FC = () => {
     return 'Buenas noches';
   };
 
+  // Function to handle view change
+  const handleNavClick = (view: ActiveView) => {
+    setActiveView(view);
+    setSidebarOpen(false); // Close sidebar on mobile after navigation
+  };
+
   return (
     <div className="dashboard-container">
       {/* Overlay for mobile */}
@@ -107,27 +118,27 @@ const TenantDashboard: React.FC = () => {
         </div>
         
         <nav className="sidebar-nav">
-          <a href="#" className="nav-item active">
+          <a href="#" className={`nav-item ${activeView === 'dashboard' ? 'active' : ''}`} onClick={() => handleNavClick('dashboard')}>
             <span className="nav-icon">📊</span>
             <span className="nav-text">Dashboard</span>
           </a>
-          <a href="#" className="nav-item">
+          <a href="#" className={`nav-item ${activeView === 'payments' ? 'active' : ''}`} onClick={() => handleNavClick('payments')}>
             <span className="nav-icon">💳</span>
             <span className="nav-text">Pagos</span>
           </a>
-          <a href="#" className="nav-item">
+          <a href="#" className={`nav-item ${activeView === 'maintenance' ? 'active' : ''}`} onClick={() => handleNavClick('maintenance')}>
             <span className="nav-icon">🔧</span>
             <span className="nav-text">Mantenimiento</span>
           </a>
-          <a href="#" className="nav-item">
+          <a href="#" className={`nav-item ${activeView === 'documents' ? 'active' : ''}`} onClick={() => handleNavClick('documents')}>
             <span className="nav-icon">📄</span>
             <span className="nav-text">Documentos</span>
           </a>
-          <a href="#" className="nav-item">
+          <a href="#" className={`nav-item ${activeView === 'messages' ? 'active' : ''}`} onClick={() => handleNavClick('messages')}>
             <span className="nav-icon">💬</span>
             <span className="nav-text">Mensajes</span>
           </a>
-          <a href="#" className="nav-item">
+          <a href="#" className={`nav-item ${activeView === 'profile' ? 'active' : ''}`} onClick={() => handleNavClick('profile')}>
             <span className="nav-icon">👤</span>
             <span className="nav-text">Mi Perfil</span>
           </a>
@@ -170,9 +181,11 @@ const TenantDashboard: React.FC = () => {
 
         {/* Content Wrapper with Scroll */}
         <div className="content-wrapper">
-          {/* Quick Stats */}
-          <div className="quick-stats">
-          <div className="stat-card stat-payment">
+          {activeView === 'dashboard' && (
+            <>
+              {/* Quick Stats */}
+              <div className="quick-stats">
+              <div className="stat-card stat-payment">
             <div className="stat-icon">💰</div>
             <div className="stat-content">
               <h3>Próximo Pago</h3>
@@ -209,9 +222,9 @@ const TenantDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="quick-actions">
-          <button className="action-btn action-payment">
+              {/* Quick Actions */}
+              <div className="quick-actions">
+              <button className="action-btn action-payment">
             <span className="action-icon">💳</span>
             <span>Hacer Pago</span>
           </button>
@@ -229,11 +242,11 @@ const TenantDashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Main Grid */}
-        <div className="dashboard-grid">
-          {/* Payment Section */}
-          <section className="dashboard-section payment-section">
-            <h2 className="section-title">💳 Estado de Pagos</h2>
+              {/* Main Grid */}
+              <div className="dashboard-grid">
+                {/* Payment Section */}
+                <section className="dashboard-section payment-section">
+                <h2 className="section-title">💳 Estado de Pagos</h2>
             
             <div className="payment-card">
               <div className="payment-header">
@@ -274,9 +287,9 @@ const TenantDashboard: React.FC = () => {
             </div>
           </section>
 
-          {/* Maintenance Section */}
-          <section className="dashboard-section maintenance-section">
-            <h2 className="section-title">🔧 Solicitudes de Mantenimiento</h2>
+                {/* Maintenance Section */}
+                <section className="dashboard-section maintenance-section">
+                <h2 className="section-title">🔧 Solicitudes de Mantenimiento</h2>
             
             <div className="maintenance-stats">
               <div className="maint-stat">
@@ -330,10 +343,10 @@ const TenantDashboard: React.FC = () => {
             </button>
           </section>
 
-          {/* Notifications & Activity Section */}
-          <section className="dashboard-section notifications-section">
-            <div className="notifications-container">
-              <h2 className="section-title">🔔 Notificaciones</h2>
+                {/* Notifications & Activity Section */}
+                <section className="dashboard-section notifications-section">
+                <div className="notifications-container">
+              <h2 className="section-title">�� Notificaciones</h2>
               
               <div className="notifications-list">
                 {notifications.map((notif) => (
@@ -369,7 +382,35 @@ const TenantDashboard: React.FC = () => {
               </div>
             </div>
           </section>
-        </div>
+              </div>
+            </>
+          )}
+          {activeView === 'payments' && <Payments />}
+          {activeView === 'maintenance' && (
+            <section className="dashboard-section">
+              <h2 className="section-title">🔧 Mantenimiento</h2>
+              <p>Contenido de la sección de Mantenimiento irá aquí...</p>
+              {/* Puedes mover la lógica de "Maintenance Section" aquí si es necesario */}
+            </section>
+          )}
+          {activeView === 'documents' && (
+            <section className="dashboard-section">
+              <h2 className="section-title">📄 Documentos</h2>
+              <p>Contenido de la sección de Documentos irá aquí...</p>
+            </section>
+          )}
+           {activeView === 'messages' && (
+            <section className="dashboard-section">
+              <h2 className="section-title">💬 Mensajes</h2>
+              <p>Contenido de la sección de Mensajes irá aquí...</p>
+            </section>
+          )}
+          {activeView === 'profile' && (
+            <section className="dashboard-section">
+              <h2 className="section-title">👤 Mi Perfil</h2>
+              <p>Contenido de la sección de Mi Perfil irá aquí...</p>
+            </section>
+          )}
         </div>
       </div>
     </div>
