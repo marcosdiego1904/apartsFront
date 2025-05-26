@@ -5,6 +5,8 @@ import { LoginPage } from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { DashboardManager } from './components/DashoardManager';
 import  TenantDashboard  from './components/tenantDasboard';
+import ManagerMaintenanceDashboard from './pages/manager/ManagerMaintenanceDashboard';
+import ManagerMaintenanceRequestDetail from './pages/manager/ManagerMaintenanceRequestDetail';
 import './styles/globalStyles.css'
 
 function App() {
@@ -68,6 +70,28 @@ function App() {
                     <p>Vista del manager para gestionar solicitudes de mantenimiento</p>
                   </div>
                 } 
+                requiredRole={'manager'} 
+              />
+            }
+          />
+
+          {/* NUEVA RUTA: Dashboard de Mantenimiento para Manager */}
+          <Route
+            path="/manager/maintenance-dashboard"
+            element={
+              <ProtectedRoute 
+                element={<ManagerMaintenanceDashboard />} 
+                requiredRole={'manager'} 
+              />
+            }
+          />
+
+          {/* NUEVA RUTA: Detalle de Solicitud de Mantenimiento para Manager */}
+          <Route
+            path="/manager/maintenance-request/:requestId"
+            element={
+              <ProtectedRoute 
+                element={<ManagerMaintenanceRequestDetail />} 
                 requiredRole={'manager'} 
               />
             }

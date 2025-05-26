@@ -2,6 +2,7 @@ import { DashboardView } from "./Cards";
 import EnhancedUnitList from '../components/UnitList';
 import UserManagement from "../components/userList";
 import Payments from "./Payments";
+import ManagerMaintenanceDashboard from '../pages/manager/ManagerMaintenanceDashboard';
 import './style1.css'
 
 interface MainContentProps {
@@ -20,7 +21,7 @@ interface MainContentProps {
         case 'payments':
           return <Payments />;
         case 'maintenance':
-          return <div><h2 className="page-title">Maintenance Requests</h2><p>Content for Maintenance Requests goes here...</p></div>;
+          return <ManagerMaintenanceDashboard />;
         default:
           return <DashboardView />;
       }

@@ -360,64 +360,82 @@ const TenantPayments: React.FC = () => {
   
   const pendingTenantChargesForDisplay = tenantCharges.filter(c => c.status === 'pending' && c.tenantId === user?.id);
 
-  return (
-    <div className="payments-view-container">
-      <h2 className="section-title">💳 Mis Pagos</h2>
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: 'var(--bg-secondary, #ffffff)', // Use a theme variable or fallback to white
+    padding: '1.5rem 2rem',
+    borderRadius: '0.75rem', 
+    border: '1px solid var(--border-secondary, #e0e0e0)', // Use theme border or a light gray
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)', // More subtle shadow, or remove if not in original theme
+    marginBottom: '2rem',
+  };
 
-      {user && <p className="welcome-message" style={{textAlign: 'center', marginBottom: '1.5rem'}}>Bienvenido, {user.firstName || user.username}</p>}
+  const cardTitleStyle: React.CSSProperties = {
+    fontSize: '1.3rem', 
+    color: 'var(--text-primary)', 
+    marginBottom: '1.5rem', 
+    borderBottom: '1px solid var(--border-secondary, #e0e0e0)',
+    paddingBottom: '0.75rem',
+  };
+
+  return (
+    <div className="payments-view-container" style={{ padding: '2rem' }}> {/* Removed explicit page background color to allow global styles */}
+      <h2 className="section-title" style={{ textAlign: 'center', color: 'var(--text-primary)', marginBottom: '2.5rem', fontSize: '1.8rem' }}>💳 Mis Pagos</h2>
+
+      {user && <p className="welcome-message" style={{textAlign: 'center', marginBottom: '2rem', fontSize: '1.1rem', color: 'var(--text-secondary)'}}>Bienvenido, {user.firstName || user.username}</p>}
 
       {urgentPaymentContext && (
         <div 
           style={{ 
-            backgroundColor: 'var(--accent-danger-light)', // O un color de advertencia adecuado
+            backgroundColor: 'var(--accent-danger-light)',
             border: '1px solid var(--accent-danger)',
             borderLeft: '5px solid var(--accent-danger)',
             padding: '1.25rem',
             borderRadius: '0.75rem',
-            marginBottom: '2rem',
-            color: 'var(--accent-danger-dark)' // Texto oscuro para contraste
+            marginBottom: '2.5rem',
+            color: 'var(--accent-danger-dark)',
+            // boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', // Removed or use theme shadow
           }}
         >
-          <h4 style={{ marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', fontSize: '1.1em' }}>
+          <h4 style={{ marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', fontSize: '1.2em', color: 'var(--accent-danger)' }}>
             <span role="img" aria-label="warning" style={{ marginRight: '0.75rem', fontSize: '1.3em' }}>⚠️</span>
             Aviso Importante
           </h4>
-          <p style={{ margin: 0 }}>{urgentPaymentContext.message}</p>
+          <p style={{ margin: 0, fontSize: '0.95rem' }}>{urgentPaymentContext.message}</p>
         </div>
       )}
 
-      <section className="dashboard-section payment-form-section">
+      {/* Card 1: Current Dues & Payment Actions */}
+      <section className="dashboard-section payment-action-card" style={cardStyle}>
+        <h3 style={cardTitleStyle}>Estado de Cuenta y Pagos Pendientes</h3>
+        
         {currentPaymentMonth && displayCurrentPaymentMonthStr && displayCurrentPaymentDueDateStr ? (
-          <>
-            <h3 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Realizar un Pago</h3>
-            <p>
-              Saldo pendiente para <strong>Alquiler {displayCurrentPaymentMonthStr}</strong>: 
-              <strong style={{ color: 'var(--accent-warning)' }}> ${totalAmountToPay.toFixed(2)}</strong>
+          <div style={{marginBottom: '1.5rem'}}>
+            <p style={{color: 'var(--text-primary)', fontSize: '1.05rem'}}>
+              Concepto principal: <strong>Alquiler {displayCurrentPaymentMonthStr}</strong>
             </p>
-            <p className="text-secondary" style={{fontSize: '0.9em', marginBottom: '1.5rem'}}>
-              Fecha de Vencimiento: {displayCurrentPaymentDueDateStr}
+            <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
+              Vencimiento: {displayCurrentPaymentDueDateStr}
             </p>
-          </>
+          </div>
         ) : (
-          <h3 className="section-title" style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Realizar un Pago</h3>
+          !showPaymentForm && <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem'}}>No hay alquileres pendientes de pago actualmente.</p>
         )}
         
-        {/* SECCIÓN DE CARGOS ADICIONALES PENDIENTES (integrada antes del resumen si hay algo que pagar) */}
         {pendingTenantChargesForDisplay.length > 0 && (
-            <div className="pending-charges-section" style={{marginTop: '1.5rem', marginBottom: '1rem'}}>
-              <h4>Cargos Adicionales Pendientes a Pagar</h4>
+            <div className="pending-charges-section" style={{marginTop: '1rem', marginBottom: '2rem'}}>
+              <h4 style={{fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Cargos Adicionales Pendientes</h4>
               <ul className="charges-list" style={{listStyle: 'none', paddingLeft: '0'}}>
                 {pendingTenantChargesForDisplay.map(charge => (
-                  <li key={charge.id} className="charge-item" style={{marginBottom: '0.5rem'}}>
+                  <li key={charge.id} className="charge-item" style={{marginBottom: '0.75rem', display: 'flex', alignItems: 'center'}}>
                     <input 
                       type="checkbox"
                       id={`charge-${charge.id}`}
                       checked={selectedCharges.includes(charge.id)}
                       onChange={() => handleChargeSelectionChange(charge.id)}
-                      style={{marginRight: '8px'}}
+                      style={{marginRight: '10px', transform: 'scale(1.1)' }}
                     />
-                    <label htmlFor={`charge-${charge.id}`}>
-                      {charge.concept} - ${charge.amount.toFixed(2)} (Asignado: {charge.dateAssigned})
+                    <label htmlFor={`charge-${charge.id}`} style={{color: 'var(--text-primary)', fontSize: '0.95rem'}}>
+                      {charge.concept} - <strong style={{color: 'var(--accent-warning)'}}>${charge.amount.toFixed(2)}</strong> (Asignado: {charge.dateAssigned})
                     </label>
                   </li>
                 ))}
@@ -425,35 +443,44 @@ const TenantPayments: React.FC = () => {
             </div>
         )}
 
-        {showPaymentForm ? (
-          <div className="payment-summary-and-form" style={{marginTop: currentPaymentMonth ? '0' : '1.5rem'}}>
-             <div className="payment-summary" style={{marginBottom: '1.5rem', padding: '1rem', border: '1px solid #eee', borderRadius: '4px', background: '#f9f9f9', color: '#333'}}>
-                <h4>Resumen del Pago Actual</h4>
-                {currentPaymentMonth && !tenantViewHistory.find(p => p.concept === `Alquiler ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed') && (
-                   <p>Alquiler ({getMonthYearString(currentPaymentMonth)}): ${DEFAULT_MONTHLY_AMOUNT.toFixed(2)}</p>
-                )}
-                {selectedCharges.map(chargeId => {
-                  const charge = tenantCharges.find(c => c.id === chargeId);
-                  return charge ? <p key={charge.id}>{charge.concept}: ${charge.amount.toFixed(2)}</p> : null;
-                })}
-                <hr style={{margin: '1rem 0'}}/>
-                <p>
-                  <strong>Total a Pagar: ${totalAmountToPay.toFixed(2)}</strong>
-                </p>
-              </div>
-              
-              <div 
+        {showPaymentForm && (
+          <div className="payment-summary" style={{marginBottom: '2rem', padding: '1.25rem', border: '1px solid var(--border-secondary, #dee2e6)', borderRadius: '0.5rem', background: 'var(--bg-tertiary, #f8f9fa)'}}>
+            <h4 style={{fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Resumen del Pago Actual</h4>
+            {currentPaymentMonth && !tenantViewHistory.find(p => p.concept === `Alquiler ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed') && (
+               <p style={{color: 'var(--text-primary)'}}>Alquiler ({getMonthYearString(currentPaymentMonth)}): ${DEFAULT_MONTHLY_AMOUNT.toFixed(2)}</p>
+            )}
+            {selectedCharges.map(chargeId => {
+              const charge = tenantCharges.find(c => c.id === chargeId);
+              return charge ? <p key={charge.id} style={{color: 'var(--text-primary)'}}>{charge.concept}: ${charge.amount.toFixed(2)}</p> : null;
+            })}
+            <hr style={{margin: '1rem 0', borderColor: 'var(--border-secondary, #ced4da)'}}/>
+            <p style={{color: 'var(--text-primary)', fontSize: '1.15rem'}}>
+              <strong>Total a Pagar: <span style={{color: 'var(--accent-warning)'}}>${totalAmountToPay.toFixed(2)}</span></strong>
+            </p>
+          </div>
+        )}
+        
+        {!showPaymentForm && !currentPaymentMonth && pendingTenantChargesForDisplay.length === 0 && (
+             <p style={{marginTop: '1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem'}}>🎉 ¡Estás al día con tus pagos de alquiler y no tienes cargos adicionales pendientes!</p>
+        )}
+      </section>
+
+      {/* Card 2: Payment Form */}
+      {showPaymentForm && (
+        <section className="dashboard-section payment-form-card" style={cardStyle}>
+            <h3 style={cardTitleStyle}>Realizar Pago</h3>
+            <div 
                 style={{
-                  backgroundColor: 'var(--bg-tertiary)',
+                  backgroundColor: 'var(--bg-tertiary)', 
                   border: '1px solid var(--border-secondary)',
                   borderLeft: '5px solid var(--accent-info)',
                   padding: '1.25rem',
                   borderRadius: '0.75rem',
-                  marginBottom: '2rem',
-                  color: 'var(--text-secondary)'
+                  marginBottom: '2.5rem',
+                  color: 'var(--text-secondary)',
                 }}
               >
-                <h4 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', fontSize: '1.1em' }}>
+                <h4 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', fontSize: '1.15em' }}>
                   <span role="img" aria-label="info" style={{ marginRight: '0.75rem', fontSize: '1.3em', color: 'var(--accent-info)' }}>ℹ️</span>
                   Utiliza estos datos para el pago de demostración:
                 </h4>
@@ -480,148 +507,139 @@ const TenantPayments: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmitPayment} className="payment-form">
-                <h4>Detalles de la Tarjeta</h4>
+                <h4 style={{fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1.5rem'}}>Detalles de la Tarjeta</h4>
                 <div className="form-grid form-grid-cols-2">
                   <div className="form-group">
-                    <label htmlFor="cardHolderName" className="form-label">Nombre del Titular:</label>
+                    <label htmlFor="cardHolderName" className="form-label" style={{color: 'var(--text-secondary)'}}>Nombre del Titular:</label>
                     <input
-                      type="text"
-                      id="cardHolderName"
-                      name="cardHolderName"
-                      className="form-input"
-                      value={paymentDetails.cardHolderName}
-                      onChange={handleInputChange}
-                      placeholder={PREDETERMINED_CARD.HOLDER_NAME} 
-                      required
+                      type="text" id="cardHolderName" name="cardHolderName" className="form-input"
+                      value={paymentDetails.cardHolderName} onChange={handleInputChange} placeholder={PREDETERMINED_CARD.HOLDER_NAME} required
+                      style={{borderColor: 'var(--border-secondary)', color: 'var(--text-primary)'}}
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="cardNumber" className="form-label">Número de Tarjeta:</label>
+                    <label htmlFor="cardNumber" className="form-label" style={{color: 'var(--text-secondary)'}}>Número de Tarjeta:</label>
                     <input
-                      type="text"
-                      id="cardNumber"
-                      name="cardNumber"
-                      className="form-input"
-                      value={paymentDetails.cardNumber}
-                      onChange={handleInputChange}
-                      placeholder={PREDETERMINED_CARD.NUMBER}
-                      required
+                      type="text" id="cardNumber" name="cardNumber" className="form-input"
+                      value={paymentDetails.cardNumber} onChange={handleInputChange} placeholder={PREDETERMINED_CARD.NUMBER} required
+                      style={{borderColor: 'var(--border-secondary)', color: 'var(--text-primary)'}}
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="expiryDate" className="form-label">Fecha de Expiración (MM/YY):</label>
+                    <label htmlFor="expiryDate" className="form-label" style={{color: 'var(--text-secondary)'}}>Fecha de Expiración (MM/YY):</label>
                     <input
-                      type="text"
-                      id="expiryDate"
-                      name="expiryDate"
-                      className="form-input"
-                      value={paymentDetails.expiryDate}
-                      onChange={handleInputChange}
-                      placeholder={PREDETERMINED_CARD.EXPIRY_DATE}
-                      required
+                      type="text" id="expiryDate" name="expiryDate" className="form-input"
+                      value={paymentDetails.expiryDate} onChange={handleInputChange} placeholder={PREDETERMINED_CARD.EXPIRY_DATE} required
+                      style={{borderColor: 'var(--border-secondary)', color: 'var(--text-primary)'}}
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="cvv" className="form-label">CVV:</label>
+                    <label htmlFor="cvv" className="form-label" style={{color: 'var(--text-secondary)'}}>CVV:</label>
                     <input
-                      type="text"
-                      id="cvv"
-                      name="cvv"
-                      className="form-input"
-                      value={paymentDetails.cvv}
-                      onChange={handleInputChange}
-                      placeholder={PREDETERMINED_CARD.CVV}
-                      required
+                      type="text" id="cvv" name="cvv" className="form-input"
+                      value={paymentDetails.cvv} onChange={handleInputChange} placeholder={PREDETERMINED_CARD.CVV} required
+                      style={{borderColor: 'var(--border-secondary)', color: 'var(--text-primary)'}}
                     />
                   </div>
                 </div>
                 {paymentError && (
-                  <p className="error-message payment-error" style={{marginTop: '1rem', color: 'red'}}>{paymentError}</p>
+                  <p className="error-message payment-error" style={{marginTop: '1.5rem', color: 'var(--accent-danger-dark)', backgroundColor: 'var(--accent-danger-light)', padding: '0.75rem', borderRadius: '0.25rem'}}>{paymentError}</p>
                 )}
-                <button type="submit" className="btn btn-primary pay-submit-btn" style={{ marginTop: '1.5rem' }}>
+                <button type="submit" className="btn btn-primary pay-submit-btn" 
+                  style={{ 
+                    marginTop: '2rem', 
+                    // Rely on .btn-primary for colors, or use CSS variables if defined for primary buttons
+                    // backgroundColor: 'var(--accent-primary-button, var(--accent-info))', 
+                    // borderColor: 'var(--accent-primary-button-border, var(--accent-info))', 
+                    // color: 'var(--accent-primary-button-text, #ffffff)', 
+                    padding: '0.75rem 1.5rem', 
+                    fontSize: '1rem',
+                    borderRadius: '0.5rem',
+                    cursor: 'pointer'
+                  }}>
                   Pagar ${totalAmountToPay.toFixed(2)}
                 </button>
               </form>
-            </div>
-          ) : (
-            <p style={{marginTop: '1.5rem', textAlign: 'center', color: 'var(--text-secondary)'}}>No hay pagos de alquiler pendientes o cargos seleccionados para pagar en este momento.</p>
-        )}
+        </section>
+      )}
+
+      {/* Card 3: Future Payment Information */}
+      <section className="dashboard-section next-payment-info" style={cardStyle}>
+        <h3 style={cardTitleStyle}>Próximo Pago Programado</h3>
+        <p style={{color: 'var(--text-secondary)'}}><strong style={{color: 'var(--text-primary)'}}>Concepto:</strong> Alquiler {displayNextScheduledPaymentMonthStr}</p>
+        <p style={{color: 'var(--text-secondary)'}}><strong style={{color: 'var(--text-primary)'}}>Monto Estimado:</strong> ${DEFAULT_MONTHLY_AMOUNT.toFixed(2)} (solo alquiler)</p>
+        <p style={{color: 'var(--text-secondary)'}}><strong style={{color: 'var(--text-primary)'}}>Fecha de Vencimiento Estimada:</strong> {displayNextScheduledPaymentDueDateStr}</p>
       </section>
 
-      <section className="dashboard-section next-payment-info" style={{ marginTop: '2rem'}}>
-        <h3 className="section-title" style={{ fontSize: '1.2rem'}}>Próximo Pago Programado</h3>
-        <p className="text-secondary"><strong className="text-primary">Concepto:</strong> Alquiler {displayNextScheduledPaymentMonthStr}</p>
-        <p className="text-secondary"><strong className="text-primary">Monto Estimado:</strong> ${DEFAULT_MONTHLY_AMOUNT.toFixed(2)} (solo alquiler)</p>
-        <p className="text-secondary"><strong className="text-primary">Fecha de Vencimiento Estimada:</strong> 
-          {displayNextScheduledPaymentDueDateStr}
-        </p>
-      </section>
+      {/* Card 4: Transaction History */}
+      <section className="dashboard-section transaction-history-card" style={cardStyle}>
+        <h3 style={cardTitleStyle}>Historial de Transacciones</h3>
+        
+        <div className="payment-history-section" style={{marginBottom: '2.5rem'}}>
+            <h4 style={{fontSize: '1.15rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Mis Pagos Realizados</h4>
+            {tenantViewHistory.length > 0 ? (
+              <div className="table-container">
+                <table className="users-table" style={{borderColor: 'var(--border-secondary, #dee2e6)'}}>
+                  <thead>
+                    <tr>
+                      <th style={{color: 'var(--text-secondary)'}}>Fecha</th>
+                      <th style={{color: 'var(--text-secondary)'}}>Concepto</th>
+                      <th style={{color: 'var(--text-secondary)'}}>Monto</th>
+                      <th style={{color: 'var(--text-secondary)'}}>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tenantViewHistory.map((payment: PaymentRecordProperties) => (
+                      <tr key={payment.id}>
+                        <td data-label="Fecha" style={{color: 'var(--text-primary)'}}>{payment.date}</td>
+                        <td data-label="Concepto" style={{color: 'var(--text-primary)'}}>{payment.concept}</td>
+                        <td data-label="Monto" style={{color: 'var(--text-primary)'}}>${payment.amount.toFixed(2)}</td>
+                        <td data-label="Estado"><span className={`status-badge status-${payment.status.toLowerCase()}`}>{payment.status}</span></td> 
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{color: 'var(--text-secondary)'}}>Aún no tienes historial de pagos.</p>
+            )}
+        </div>
 
-      <section className="dashboard-section payment-history-section" style={{ marginTop: '2rem'}}>
-        <h3 className="section-title" style={{ fontSize: '1.2rem' }}>Mi Historial de Pagos</h3>
-        {tenantViewHistory.length > 0 ? (
-          <div className="table-container">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Concepto</th>
-                  <th>Monto</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tenantViewHistory.map((payment: PaymentRecordProperties) => (
-                  <tr key={payment.id}>
-                    <td data-label="Fecha">{payment.date}</td>
-                    <td data-label="Concepto">{payment.concept}</td>
-                    <td data-label="Monto">${payment.amount.toFixed(2)}</td>
-                    <td data-label="Estado"><span className={`status-badge status-${payment.status.toLowerCase()}`}>{payment.status}</span></td> 
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-secondary no-history-message">Aún no tienes historial de pagos.</p>
-        )}
-      </section>
-
-      {/* Historial de Cargos Adicionales del Inquilino */}
-      <section className="dashboard-section charges-history-section" style={{ marginTop: '2rem'}}>
-        <h3 className="section-title" style={{ fontSize: '1.2rem' }}>Mi Historial de Cargos Adicionales</h3>
-        {tenantCharges.length > 0 ? (
-           <div className="table-container">
-             <table className="users-table">
-               <thead>
-                 <tr>
-                   <th>Fecha Asignación</th>
-                   <th>Concepto</th>
-                   <th>Monto</th>
-                   <th>Estado</th>
-                   <th>Pagado con ID Trans.</th>
-                 </tr>
-               </thead>
-               <tbody>
-                {tenantCharges.sort((a,b) => new Date(b.dateAssignedISO).getTime() - new Date(a.dateAssignedISO).getTime()).map((charge: ChargeRecord) => (
-                  <tr key={charge.id}>
-                    <td data-label="Fecha Asignación">{charge.dateAssigned}</td>
-                    <td data-label="Concepto">{charge.concept}</td>
-                    <td data-label="Monto">${charge.amount.toFixed(2)}</td>
-                    <td data-label="Estado">
-                        <span className={`status-badge status-${charge.status === 'pending' ? 'warning' : 'success'}`}>
-                            {charge.status}
-                        </span>
-                    </td>
-                    <td data-label="Pagado con ID Trans.">{charge.paymentId || 'N/A'}</td>
-                  </tr>
-                ))}
-               </tbody>
-             </table>
-           </div>
-        ) : (
-            <p className="text-secondary no-history-message">No tienes cargos adicionales registrados.</p>
-        )}
+        <div className="charges-history-section">
+            <h4 style={{fontSize: '1.15rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Mis Cargos Adicionales</h4>
+            {tenantCharges.length > 0 ? (
+               <div className="table-container">
+                 <table className="users-table" style={{borderColor: 'var(--border-secondary, #dee2e6)'}}>
+                   <thead>
+                     <tr>
+                       <th style={{color: 'var(--text-secondary)'}}>Fecha Asignación</th>
+                       <th style={{color: 'var(--text-secondary)'}}>Concepto</th>
+                       <th style={{color: 'var(--text-secondary)'}}>Monto</th>
+                       <th style={{color: 'var(--text-secondary)'}}>Estado</th>
+                       <th style={{color: 'var(--text-secondary)'}}>Pagado con ID Trans.</th>
+                     </tr>
+                   </thead>
+                   <tbody>
+                    {tenantCharges.sort((a,b) => new Date(b.dateAssignedISO).getTime() - new Date(a.dateAssignedISO).getTime()).map((charge: ChargeRecord) => (
+                      <tr key={charge.id}>
+                        <td data-label="Fecha Asignación" style={{color: 'var(--text-primary)'}}>{charge.dateAssigned}</td>
+                        <td data-label="Concepto" style={{color: 'var(--text-primary)'}}>{charge.concept}</td>
+                        <td data-label="Monto" style={{color: 'var(--text-primary)'}}>${charge.amount.toFixed(2)}</td>
+                        <td data-label="Estado">
+                            <span className={`status-badge status-${charge.status === 'pending' ? 'warning' : 'success'}`}>
+                                {charge.status}
+                            </span>
+                        </td>
+                        <td data-label="Pagado con ID Trans." style={{color: 'var(--text-primary)'}}>{charge.paymentId || 'N/A'}</td>
+                      </tr>
+                    ))}
+                   </tbody>
+                 </table>
+               </div>
+            ) : (
+                <p style={{color: 'var(--text-secondary)'}}>No tienes cargos adicionales registrados.</p>
+            )}
+        </div>
       </section>
     </div>
   );
