@@ -15,6 +15,11 @@
   padding-bottom: 10px;
 }
 
+.maintenance-form {
+  padding: 20px;
+  border-radius: 8px;
+}
+
 .maintenance-form .form-group {
   margin-bottom: 20px;
 }
@@ -23,74 +28,121 @@
   display: flex;
   gap: 20px;
   margin-bottom: 20px;
+  align-items: flex-start;
 }
 
 .maintenance-form .form-row .form-group {
   flex: 1;
-  margin-bottom: 0; /* Reset margin as it's handled by form-row gap */
+  min-width: 0;
 }
 
 .maintenance-form label {
   display: block;
   margin-bottom: 8px;
-  font-weight: 600;
+  font-weight: 500;
+  color: #c9d1d9;
   font-size: 0.9rem;
-  color: #555;
 }
 
-.maintenance-form input[type=\"text\"],
+.maintenance-form input[type="text"],
 .maintenance-form textarea,
 .maintenance-form select {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
+  padding: 12px 15px;
+  border: 1px solid #484f58;
   border-radius: 6px;
+  background-color: #22272e;
+  color: #c9d1d9;
   font-size: 1rem;
   box-sizing: border-box;
-  transition: border-color 0.2s ease-in-out;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.maintenance-form input[type=\"text\"]:focus,
+.maintenance-form input[type="text"]:focus,
 .maintenance-form textarea:focus,
 .maintenance-form select:focus {
-  border-color: #4a90e2;
+  border-color: #58a6ff;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
 }
 
 .maintenance-form textarea {
+  min-height: 100px;
   resize: vertical;
-  min-height: 80px;
 }
 
 .maintenance-form .required-asterisk {
-  color: #e53e3e; /* Red color for asterisk */
+  color: #e74c3c;
   margin-left: 2px;
 }
 
-.maintenance-form .permission-group label {
+.maintenance-form .permission-group {
+  margin-top: 25px;
+  margin-bottom: 25px;
+}
+
+.maintenance-form .checkbox-label {
   display: flex;
   align-items: center;
-  font-weight: normal; /* Checkbox label doesn't need to be bold */
+  gap: 10px;
+  color: #8b949e;
+  font-size: 0.875rem;
+  font-weight: normal;
+  cursor: pointer;
 }
 
-.maintenance-form input[type=\"checkbox\"] {
-  margin-right: 10px;
-  width: auto; /* Override width for checkbox */
-  height: 1rem;
-  width: 1rem;
-  accent-color: #4a90e2;
+.maintenance-form .checkbox-label input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #636e7b;
+  border-radius: 3px;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 
-.maintenance-form .form-group small {
+.maintenance-form .checkbox-label input[type="checkbox"]:checked {
+  background-color: #58a6ff;
+  border-color: #58a6ff;
+}
+
+.maintenance-form .checkbox-label input[type="checkbox"]:checked::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.maintenance-form .checkbox-label .checkbox-label-text {
+  line-height: 1.4;
+}
+
+.maintenance-form small {
   display: block;
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 0.8rem;
-  color: #777;
+  color: #8b949e;
+}
+
+.maintenance-form .action-btn {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .maintenance-form .submit-btn {
-  background-color: #4a90e2; /* Primary blue */
+  background-color: #4a90e2;
   color: white;
   padding: 12px 20px;
   border: none;
@@ -99,23 +151,35 @@
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
-  display: inline-block; /* Or block with margin auto for centering */
+  display: inline-block;
 }
 
 .maintenance-form .submit-btn:hover {
-  background-color: #357abd; /* Darker blue */
+  background-color: #357abd;
 }
 
-/* Ajustes responsivos básicos */
 @media (max-width: 768px) {
   .maintenance-form .form-row {
     flex-direction: column;
-    gap: 0; /* Remove gap as items stack */
+    gap: 0;
   }
   .maintenance-form .form-row .form-group {
-    margin-bottom: 20px; /* Add back margin for stacked items */
+    margin-bottom: 20px;
   }
   .maintenance-form .form-row .form-group:last-child {
-    margin-bottom: 0; /* Remove margin for the last item in a stacked row */
+    margin-bottom: 0;
   }
+}
+
+.maintenance-form ::placeholder {
+  color: #6e7681;
+  opacity: 1;
+}
+
+.maintenance-form :-ms-input-placeholder {
+  color: #6e7681;
+}
+
+.maintenance-form ::-ms-input-placeholder {
+  color: #6e7681;
 } 

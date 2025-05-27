@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import type { MaintenanceRequest } from '../../types/maintenance';
-import { fetchRequestById, updateRequestAPI } from '../../data/maintenanceMockData'; // Importar desde el archivo centralizado
+// import { fetchRequestById, updateRequestAPI } from '../../data/maintenanceMockData'; // No longer used directly for fetching/saving main data
 
-// // Mover sampleRequests aquí para que sea accesible por ambas funciones - YA NO ES NECESARIO, SE IMPORTA
-// const sampleRequests: MaintenanceRequest[] = [ ... ]; // ELIMINADO
-
-// // Simulación de la función para obtener una solicitud por ID - YA NO ES NECESARIO, SE IMPORTA
-// const fetchRequestById = async (id: string): Promise<MaintenanceRequest | undefined> => { ... }; // ELIMINADO
-
-// // Simulación de la función para actualizar una solicitud - YA NO ES NECESARIO, SE IMPORTA
-// const updateRequestAPI = async (id: string, updates: Partial<MaintenanceRequest>): Promise<MaintenanceRequest | undefined> => { ... }; // ELIMINADO
+const SHARED_LOCAL_STORAGE_KEY = 'allMaintenanceRequests';
 
 // Componente para mostrar estrellas de calificación (simple)
 const StarRatingDisplay: React.FC<{ rating: number }> = ({ rating }) => {
@@ -44,43 +37,47 @@ const ManagerMaintenanceRequestDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para los campos editables por el manager
   const [currentUrgency, setCurrentUrgency] = useState<MaintenanceRequest['urgency']>('Low');
   const [assignedSpecialist, setAssignedSpecialist] = useState('');
   const [internalNotes, setInternalNotes] = useState('');
-  const [currentStatus, setCurrentStatus] = useState<MaintenanceRequest['status']>('New');
-  const [scheduledDate, setScheduledDate] = useState<string>(''); // Para el input datetime-local
-  const [managerNotesInput, setManagerNotesInput] = useState(''); // Nuevo estado para notas del manager
-  const [newlyUploadedPhotos, setNewlyUploadedPhotos] = useState<string[]>([]); // Para previsualizar nuevas fotos (base64)
-  const [photoFilesToUpload, setPhotoFilesToUpload] = useState<File[]>([]); // Para los archivos reales a "subir"
+  // Initialize with a valid status from the enum
+  const [currentStatus, setCurrentStatus] = useState<MaintenanceRequest['status']>('Received'); 
+  const [scheduledDate, setScheduledDate] = useState<string>('');
+  const [managerNotesInput, setManagerNotesInput] = useState('');
+  const [newlyUploadedPhotos, setNewlyUploadedPhotos] = useState<string[]>([]);
+  const [photoFilesToUpload, setPhotoFilesToUpload] = useState<File[]>([]); 
 
   useEffect(() => {
     if (requestId) {
       setLoading(true);
-      fetchRequestById(requestId)
-        .then(data => {
-          if (data) {
-            setRequest(data);
-            // Inicializar los campos editables con los valores actuales de la solicitud
-            setCurrentUrgency(data.urgency);
-            setAssignedSpecialist(data.assignedSpecialist || '');
-            setInternalNotes(data.internalNotes || '');
-            setCurrentStatus(data.status);
-            setManagerNotesInput(data.managerNotes || ''); // Inicializar notas del manager
-            // Formatear la fecha para el input datetime-local si existe
-            if (data.scheduledDate) {
-              // El input datetime-local espera 'AAAA-MM-DDTHH:mm'
-              const date = new Date(data.scheduledDate);
-              // Ajustar por la zona horaria local para la visualización correcta en el input
+      try {
+        const storedRequestsJSON = localStorage.getItem(SHARED_LOCAL_STORAGE_KEY);
+        if (storedRequestsJSON) {
+          const allRequests = JSON.parse(storedRequestsJSON) as MaintenanceRequest[];
+          const foundRequest = allRequests.find(r => r.id === requestId);
+          if (foundRequest) {
+            setRequest(foundRequest);
+            setCurrentUrgency(foundRequest.urgency);
+            setAssignedSpecialist(foundRequest.assignedSpecialist || '');
+            setInternalNotes(foundRequest.internalNotes || '');
+            setCurrentStatus(foundRequest.status);
+            setManagerNotesInput(foundRequest.managerNotes || '');
+            if (foundRequest.scheduledDate) {
+              const date = new Date(foundRequest.scheduledDate);
               const localIsoString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
               setScheduledDate(localIsoString);
             }
           } else {
-            setError('Solicitud no encontrada.');
+            setError('Solicitud no encontrada en localStorage.');
           }
-        })
-        .catch(() => setError('Error al cargar la solicitud.'))
-        .finally(() => setLoading(false));
+        } else {
+          setError('No hay solicitudes en localStorage.');
+        }
+      } catch (e) {
+        console.error("Error reading/parsing localStorage:", e);
+        setError('Error al cargar la solicitud desde localStorage.');
+      }
+      setLoading(false);
     }
   }, [requestId]);
 
@@ -110,52 +107,57 @@ const ManagerMaintenanceRequestDetail: React.FC = () => {
         return;
     }
 
-    // Simulación de subida de fotos: En una app real, subir photoFilesToUpload al servidor
-    // y obtener las URLs. Aquí, solo usaremos las previsualizaciones base64 como si fueran URLs.
-    const uploadedPhotoUrls = newlyUploadedPhotos; // En un caso real, serían URLs del servidor
+    const uploadedPhotoUrls = newlyUploadedPhotos;
 
-    const updates: Partial<MaintenanceRequest> = {
+    const updatesToApply: Partial<MaintenanceRequest> = {
       urgency: currentUrgency,
-      assignedSpecialist,
-      internalNotes,
+      assignedSpecialist: assignedSpecialist || undefined,
+      internalNotes: internalNotes || undefined,
       status: currentStatus,
-      scheduledDate: scheduledDate ? new Date(scheduledDate) : undefined,
-      managerNotes: managerNotesInput,
-      // Solo enviar las *nuevas* fotos. La API simulada las mezclará.
+      scheduledDate: scheduledDate || undefined, // Directly use the string state, ensure it's undefined if empty
+      managerNotes: managerNotesInput || undefined,
       completedPhotos: uploadedPhotoUrls.length > 0 ? uploadedPhotoUrls : undefined,
+      updatedAt: new Date().toISOString(), // Add/update the updatedAt timestamp
     };
 
-    // Si se establece una fecha de programación y el estado es New o In Progress, sugerir cambiar a "Scheduled"
-    if (scheduledDate && (currentStatus === 'New' || currentStatus === 'In Progress')) {
-        // Opcional: preguntar al usuario o cambiarlo automáticamente
-        // setCurrentStatus('Scheduled'); 
-        // updates.status = 'Scheduled'; // Asegurarse de que el estado se actualice si se cambia aquí
-        // Por ahora, dejaremos que el manager lo cambie manualmente si lo desea, 
-        // ya que 'Scheduled' está disponible en el dropdown.
-    }
+    // Logic for suggesting 'Scheduled' status can remain as comments or be implemented if desired
+    // if (scheduledDate && (currentStatus === 'Sent' || currentStatus === 'Received' || currentStatus === 'In Progress')) {
+    // }
 
     setLoading(true);
     setError(null);
     try {
-      const updatedRequest = await updateRequestAPI(requestId, updates);
-      if (updatedRequest) {
-        setRequest(updatedRequest); // Actualizar el estado local con la respuesta simulada
-         // Re-formatear la fecha para el input por si la API devolviera un formato distinto
+      const storedRequestsJSON = localStorage.getItem(SHARED_LOCAL_STORAGE_KEY);
+      let allRequests: MaintenanceRequest[] = [];
+      if (storedRequestsJSON) {
+        allRequests = JSON.parse(storedRequestsJSON) as MaintenanceRequest[];
+      }
+
+      const requestIndex = allRequests.findIndex(r => r.id === requestId);
+      if (requestIndex !== -1) {
+        const updatedRequest: MaintenanceRequest = {
+          ...allRequests[requestIndex],
+          ...updatesToApply,
+        };
+        allRequests[requestIndex] = updatedRequest;
+        localStorage.setItem(SHARED_LOCAL_STORAGE_KEY, JSON.stringify(allRequests));
+        setRequest(updatedRequest);
+
         if (updatedRequest.scheduledDate) {
             const date = new Date(updatedRequest.scheduledDate);
             const localIsoString = new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
             setScheduledDate(localIsoString);
         }
         setManagerNotesInput(updatedRequest.managerNotes || '');
-        // Limpiar las previsualizaciones y archivos después de "subir"
         setNewlyUploadedPhotos([]);
         setPhotoFilesToUpload([]);
-        alert('Solicitud actualizada con éxito!');
+        alert('Solicitud actualizada con éxito en localStorage!');
       } else {
-        setError('Error al actualizar la solicitud.');
+        setError('No se pudo encontrar la solicitud para actualizar en localStorage.');
       }
     } catch (err) {
-      setError('Error de conexión al actualizar.');
+      console.error("Error updating localStorage:", err);
+      setError('Error de conexión al actualizar (localStorage).');
     } finally {
       setLoading(false);
     }
@@ -174,7 +176,9 @@ const ManagerMaintenanceRequestDetail: React.FC = () => {
   const imageContainerStyle: React.CSSProperties = { display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' };
 
   // Determinar si se debe mostrar la sección de valoración
-  const showRatingSection = request.status === 'Completed' || (request.status === 'Resolved/Pending Review' && (request.rating || request.feedback));
+  // Use feedbackRating and feedbackComments as per the new type
+  const showRatingSection = request && (request.status === 'Completed' || 
+    (request.status === 'Resolved/Pending Review' && (request.feedbackRating !== undefined || request.feedbackComments !== undefined)));
 
   return (
     <div style={{ padding: '20px', color: '#343a40' }}>
@@ -217,18 +221,18 @@ const ManagerMaintenanceRequestDetail: React.FC = () => {
               <hr style={{ margin: '20px 0' }} />
               <h3 style={{...sectionTitleStyle, marginTop: '0px'}}>Valoración del Inquilino</h3>
               <div style={{ marginBottom: '20px'}}>
-                {request.rating !== undefined && request.rating !== null ? (
+                {request.feedbackRating !== undefined && request.feedbackRating !== null ? (
                   <div style={{ marginBottom: '15px' }}>
                     <strong style={labelStyle}>Calificación:</strong>
-                    <StarRatingDisplay rating={request.rating} />
+                    <StarRatingDisplay rating={request.feedbackRating} />
                   </div>
                 ) : (
                   <p style={valueStyle}>El inquilino aún no ha calificado este trabajo.</p>
                 )}
-                {request.feedback ? (
+                {request.feedbackComments ? (
                   <div>
                     <strong style={labelStyle}>Comentarios del Inquilino:</strong>
-                    <p style={{...valueStyle, fontStyle: 'italic', background: '#f8f9fa', padding: '10px', borderRadius: '4px'}}>{request.feedback}</p>
+                    <p style={{...valueStyle, fontStyle: 'italic', background: '#f8f9fa', padding: '10px', borderRadius: '4px'}}>{request.feedbackComments}</p>
                   </div>
                 ) : (
                   <p style={valueStyle}>El inquilino no ha dejado comentarios adicionales.</p>
@@ -253,11 +257,14 @@ const ManagerMaintenanceRequestDetail: React.FC = () => {
               <div style={{ flex: 1 }}>
                 <label htmlFor="status" style={labelStyle}>Actualizar Estado:</label>
                 <select id="status" value={currentStatus} onChange={(e) => setCurrentStatus(e.target.value as MaintenanceRequest['status'])} style={selectStyle}>
-                  <option value="New">Nueva (Recibida)</option> <option value="In Progress">En Progreso</option> <option value="Scheduled">Programada</option>
-                  <option value="Resolved/Pending Review">Resuelta/Pendiente Valoración</option> <option value="Completed">Completada</option>  <option value="Cancelled">Cancelada</option>
-                  {![ 'New', 'In Progress', 'Scheduled', 'Resolved/Pending Review', 'Completed', 'Cancelled'].includes(request.status) && (
-                      <option value={request.status} disabled>{request.status} (Actual)</option>
-                  )}
+                  {/* Ensure these options match MaintenanceRequest['status'] type */}
+                  <option value="Sent">Enviada (Sent)</option>
+                  <option value="Received">Recibida (Received)</option>
+                  <option value="In Progress">En Progreso (In Progress)</option>
+                  <option value="Scheduled">Programada (Scheduled)</option>
+                  <option value="Resolved/Pending Review">Resuelta/Pendiente Revisión</option>
+                  <option value="Completed">Completada (Completed)</option>
+                  <option value="Cancelled">Cancelada (Cancelled)</option>
                 </select>
               </div>
             </div>

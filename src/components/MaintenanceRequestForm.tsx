@@ -56,101 +56,98 @@ const MaintenanceRequestForm: React.FC<MaintenanceRequestFormProps> = ({ onSubmi
   ];
 
   return (
-    <div className="maintenance-form-container">
-      <h3>Crear Nueva Solicitud de Mantenimiento</h3>
-      <form onSubmit={handleSubmit} className="maintenance-form">
+    <form onSubmit={handleSubmit} className="maintenance-form">
+      <div className="form-group">
+        <label htmlFor="description">Descripción del Problema <span className="required-asterisk">*</span></label>
+        <textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+          rows={4}
+          placeholder="Describa detalladamente el problema..."
+        />
+      </div>
+
+      <div className="form-row">
         <div className="form-group">
-          <label htmlFor="description">Descripción del Problema <span className="required-asterisk">*</span></label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={4}
-            placeholder="Describa detalladamente el problema..."
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="category">Categoría del Problema <span className="required-asterisk">*</span></label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              required
-            >
-              <option value="" disabled>Seleccione una categoría</option>
-              {problemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="specificLocation">Ubicación Específica <span className="required-asterisk">*</span></label>
-            <input
-              type="text"
-              id="specificLocation"
-              value={specificLocation}
-              onChange={(e) => setSpecificLocation(e.target.value)}
-              required
-              placeholder="Ej: Baño principal, cocina"
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="urgency">Nivel de Urgencia <span className="required-asterisk">*</span></label>
+          <label htmlFor="category">Categoría del Problema <span className="required-asterisk">*</span></label>
           <select
-            id="urgency"
-            value={urgency}
-            onChange={(e) => setUrgency(e.target.value as 'Baja' | 'Media' | 'Alta/Emergencia')}
+            id="category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
             required
           >
-            <option value="Baja">Baja</option>
-            <option value="Media">Media</option>
-            <option value="Alta/Emergencia">Alta/Emergencia</option>
+            <option value="" disabled>Seleccione una categoría</option>
+            {problemCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </div>
-        
-        <div className="form-group permission-group">
-          <label htmlFor="permissionToEnter">
-            <input
-              type="checkbox"
-              id="permissionToEnter"
-              checked={permissionToEnter}
-              onChange={(e) => setPermissionToEnter(e.target.checked)}
-            />
-            Permiso para entrar a la unidad para la reparación
-          </label>
-        </div>
 
-        {permissionToEnter && (
-          <div className="form-group">
-            <label htmlFor="preferredEntryTime">Franja Horaria Preferida para Entrada</label>
-            <input
-              type="text"
-              id="preferredEntryTime"
-              value={preferredEntryTime}
-              onChange={(e) => setPreferredEntryTime(e.target.value)}
-              placeholder="Ej: Lunes de 9am a 12pm"
-            />
-            <small>Por favor, indique una o varias franjas horarias convenientes.</small>
-          </div>
-        )}
-
-        {/* Aquí iría la lógica para subir archivos (Paso futuro) */}
-        {/* 
         <div className="form-group">
-          <label htmlFor="attachments">Subir Fotos/Videos (Opcional)</label>
-          <input type="file" id="attachments" multiple />
+          <label htmlFor="specificLocation">Ubicación Específica <span className="required-asterisk">*</span></label>
+          <input
+            type="text"
+            id="specificLocation"
+            value={specificLocation}
+            onChange={(e) => setSpecificLocation(e.target.value)}
+            required
+            placeholder="Ej: Baño principal, cocina"
+          />
         </div>
-        */}
+      </div>
 
-        <button type="submit" className="submit-btn">
-          Enviar Solicitud
-        </button>
-      </form>
-    </div>
+      <div className="form-group">
+        <label htmlFor="urgency">Nivel de Urgencia <span className="required-asterisk">*</span></label>
+        <select
+          id="urgency"
+          value={urgency}
+          onChange={(e) => setUrgency(e.target.value as 'Baja' | 'Media' | 'Alta/Emergencia')}
+          required
+        >
+          <option value="Baja">Baja</option>
+          <option value="Media">Media</option>
+          <option value="Alta/Emergencia">Alta/Emergencia</option>
+        </select>
+      </div>
+      
+      <div className="form-group permission-group">
+        <label htmlFor="permissionToEnter" className="checkbox-label">
+          <input
+            type="checkbox"
+            id="permissionToEnter"
+            checked={permissionToEnter}
+            onChange={(e) => setPermissionToEnter(e.target.checked)}
+          />
+          <span className="checkbox-label-text">Permiso para entrar a la unidad para la reparación</span>
+        </label>
+      </div>
+
+      {permissionToEnter && (
+        <div className="form-group">
+          <label htmlFor="preferredEntryTime">Franja Horaria Preferida para Entrada</label>
+          <input
+            type="text"
+            id="preferredEntryTime"
+            value={preferredEntryTime}
+            onChange={(e) => setPreferredEntryTime(e.target.value)}
+            placeholder="Ej: Lunes de 9am a 12pm"
+          />
+          <small>Por favor, indique una o varias franjas horarias convenientes.</small>
+        </div>
+      )}
+
+      {/* Aquí iría la lógica para subir archivos (Paso futuro) */}
+      {/* 
+      <div className="form-group">
+        <label htmlFor="attachments">Subir Fotos/Videos (Opcional)</label>
+        <input type="file" id="attachments" multiple />
+      </div>
+      */}
+
+      <button type="submit" className="action-btn">
+        Enviar Solicitud
+      </button>
+    </form>
   );
 };
 

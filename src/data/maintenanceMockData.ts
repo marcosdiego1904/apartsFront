@@ -1,49 +1,65 @@
 import type { MaintenanceRequest } from '../types/maintenance';
 
-// Array de datos de ejemplo para solicitudes de mantenimiento
+// Array de datos de ejemplo para solicitudes de mantenimiento, conformed to new MaintenanceRequest type
 export const sampleRequests: MaintenanceRequest[] = [
   {
     id: 'REQ001',
     tenantId: 'TEN001',
     propertyId: 'PROP001',
-    description: 'Grifo de la cocina gotea',
+    tenantName: 'Ana Gómez',
+    title: 'Grifo de la cocina gotea',
+    description: 'Grifo de la cocina gotea continuadamente.',
+    category: 'Plomería',
+    specificLocation: 'Cocina, grifo principal',
+    permissionToEnter: true,
     status: 'Completed',
     urgency: 'Medium',
-    createdAt: new Date('2023-10-01T10:00:00Z'),
-    updatedAt: new Date('2023-10-03T11:00:00Z'),
-    tenantName: 'Ana Gómez',
+    submittedDate: '2023-10-01T10:00:00Z',
+    createdAt: '2023-10-01T10:00:00Z',
+    updatedAt: '2023-10-03T11:00:00Z',
     images: ['https://via.placeholder.com/150/FF0000/FFFFFF?Text=Inquilino1', 'https://via.placeholder.com/150/00FF00/FFFFFF?Text=Inquilino2'],
     managerNotes: 'Se reemplazó la goma del grifo y se verificó que no haya fugas. Trabajo completado.',
     completedPhotos: ['https://via.placeholder.com/150/0000FF/FFFFFF?Text=Manager1', 'https://via.placeholder.com/150/00AAFF/FFFFFF?Text=Manager2'],
-    rating: 5,
-    feedback: '¡Excelente trabajo! El grifo funciona perfectamente ahora. Muy rápido y profesional.',
-    scheduledDate: new Date('2023-10-03T09:00:00Z'),
+    feedbackRating: 5,
+    feedbackComments: '¡Excelente trabajo! El grifo funciona perfectamente ahora. Muy rápido y profesional.',
+    scheduledDate: '2023-10-03T09:00:00Z',
     assignedSpecialist: 'Carlos (Fontanero)'
   },
   {
     id: 'REQ002',
     tenantId: 'TEN002',
     propertyId: 'PROP002',
-    description: 'Calefacción no funciona',
+    tenantName: 'Luis Fernandez',
+    title: 'Calefacción no funciona en salón',
+    description: 'Calefacción no funciona, no expulsa aire caliente.',
+    category: 'Aire Acondicionado/Calefacción',
+    specificLocation: 'Sala de Estar, unidad principal',
+    permissionToEnter: true,
     status: 'Resolved/Pending Review',
     urgency: 'High',
-    createdAt: new Date('2023-10-02T14:30:00Z'),
-    assignedSpecialist: 'Juan Pérez (Fontanero)',
-    internalNotes: 'Revisar caldera y termostato.',
-    tenantName: 'Luis Fernandez',
-    scheduledDate: new Date('2023-10-05T09:00:00Z'),
-    managerNotes: 'Caldera revisada, pendiente de pieza.'
+    submittedDate: '2023-10-02T14:30:00Z',
+    createdAt: '2023-10-02T14:30:00Z',
+    assignedSpecialist: 'Juan Pérez (Técnico HVAC)',
+    internalNotes: 'Revisar caldera y termostato. Posible fallo en sensor.',
+    scheduledDate: '2023-10-05T09:00:00Z',
+    managerNotes: 'Caldera revisada, pendiente de pieza (sensor T-100). Se espera pieza para el 07/10.'
   },
   {
     id: 'REQ003',
     tenantId: 'TEN003',
     propertyId: 'PROP003',
-    description: 'Luz de escalera parpadea',
-    status: 'Resolved/Pending Review',
-    urgency: 'Low',
-    createdAt: new Date('2023-10-04T11:00:00Z'),
     tenantName: 'Sofía Castro',
-    managerNotes: 'Se ajustó la conexión de la luz.',
+    title: 'Luz de escalera parpadea constantemente',
+    description: 'Luz de escalera parpadea, afecta visibilidad.',
+    category: 'Electricidad',
+    specificLocation: 'Escalera entre Piso 2 y 3',
+    permissionToEnter: false,
+    status: 'Scheduled',
+    urgency: 'Low',
+    submittedDate: '2023-10-04T11:00:00Z',
+    createdAt: '2023-10-04T11:00:00Z',
+    managerNotes: 'Se ajustó la conexión de la luz. Programado electricista para revisión completa el 06/10.',
+    scheduledDate: '2023-10-06T14:00:00Z'
   }
 ];
 
@@ -66,11 +82,11 @@ export const updateRequestAPI = async (id: string, updates: Partial<MaintenanceR
         newCompletedPhotos = [...newCompletedPhotos, ...updates.completedPhotos];
     }
 
-    const updatedRequestData = { 
+    const updatedRequestData: MaintenanceRequest = { 
         ...currentRequest, 
         ...updates, 
         completedPhotos: newCompletedPhotos,
-        updatedAt: new Date() 
+        updatedAt: new Date().toISOString()
     };
     
     sampleRequests[requestIndex] = updatedRequestData;

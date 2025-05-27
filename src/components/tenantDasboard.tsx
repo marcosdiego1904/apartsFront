@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Payments from './Payments'; // Import the Payments component
 import MaintenanceRequestForm from './MaintenanceRequestForm'; // Importar el formulario
-import MaintenanceRequestListItem, { type DetailedMaintenanceRequest } from './MaintenanceRequestListItem'; // Changed to named import
+import MaintenanceRequestListItem from './MaintenanceRequestListItem'; // Will update to use new Type
+import { type MaintenanceRequest } from '../types/maintenance'; // Adjusted path
 import '../styles/MaintenanceRequestListItem.css'; // Importar los estilos para el ítem de lista
 import '../styles/Pagination.css'; // Añadiremos este archivo CSS para los estilos de paginación
 import '../styles/globalStyles.css'; // Importar los estilos globales
+import '../styles/TenantDashboardMaintenance.css'; // Importar los nuevos estilos para la sección de mantenimiento
 // import '../styles/TenantDashboard.css'; // Estilos específicos para el dashboard si los tienes - Comentado temporalmente
 
 // Definición de la interfaz para los datos del formulario, que debe coincidir con la que espera MaintenanceRequestForm
@@ -38,22 +40,141 @@ interface ActivityItem {
 type ActiveView = 'dashboard' | 'payments' | 'maintenance' | 'documents' | 'messages' | 'profile' | 'maintenance-details';
 
 const ITEMS_PER_PAGE = 5; // Constante para items por página
-const LOCAL_STORAGE_KEY = 'tenantMaintenanceRequestsApp'; // Clave única para localStorage
+const SHARED_LOCAL_STORAGE_KEY = 'allMaintenanceRequests'; // Clave única para localStorage compartida
+const LOGGED_IN_TENANT_ID = 'TEN001';
+const LOGGED_IN_TENANT_NAME = "Elena Pérez"; // Added for consistency
+const DEFAULT_PROPERTY_ID = 'PROP001'; // Added for consistency
 
-// Mock data inicial que cumple con DetailedMaintenanceRequest
-const initialMockData: DetailedMaintenanceRequest[] = [
-  { id: 'mock-req-001', title: 'Fuga en lavabo del baño', description: 'Hay una fuga constante de agua debajo del lavabo en el baño principal, parece venir de la tubería de desagüe.', category: 'Plomería', specificLocation: 'Baño principal, debajo del lavabo', urgency: 'Alta/Emergencia', permissionToEnter: true, preferredEntryTime: 'Cualquier día por la mañana', submittedDate: '2024-07-20T09:30:00Z', status: 'Enviada' },
-  { id: 'mock-req-002', title: 'Aire acondicionado no enfría bien', description: 'El aire acondicionado de la sala de estar enciende pero no expulsa aire frío, solo ventila a temperatura ambiente.', category: 'Aire Acondicionado/Calefacción', specificLocation: 'Sala de estar', urgency: 'Media', permissionToEnter: true, preferredEntryTime: 'Lunes o Miércoles de 2pm a 5pm', submittedDate: '2024-07-18T14:00:00Z', status: 'En Progreso', scheduledDate: '2024-07-22T10:00:00Z' },
-  { id: 'mock-req-003', title: 'Bombilla principal de cocina quemada', description: 'Una de las bombillas principales del techo de la cocina se quemó y necesito ayuda para reemplazarla ya que está muy alta.', category: 'Electricidad', specificLocation: 'Cocina, luz de techo', urgency: 'Baja', permissionToEnter: false, submittedDate: '2024-07-17T11:00:00Z', status: 'Recibida' },
-  { id: 'mock-req-004', title: 'Puerta de entrada no cierra correctamente', description: 'La puerta de entrada roza con el marco y cuesta cerrarla.', category: 'Cerrajería', specificLocation: 'Puerta de entrada principal', urgency: 'Media', permissionToEnter: true, submittedDate: '2024-07-16T08:00:00Z', status: 'Programada', scheduledDate: '2024-07-23T15:00:00Z' },
-  { id: 'mock-req-005', title: 'Mancha de humedad en techo del dormitorio', description: 'Ha aparecido una mancha de humedad en el techo del dormitorio principal.', category: 'Pintura', specificLocation: 'Dormitorio principal, techo', urgency: 'Baja', permissionToEnter: true, submittedDate: '2024-07-15T16:00:00Z', status: 'Resuelta/Pendiente de Valoración' }, 
-  { id: 'mock-req-006', title: 'Cristal de ventana de salón rajado', description: 'El cristal de una de las ventanas del salón tiene una raja.', category: 'Otro', specificLocation: 'Salón, ventana izquierda', urgency: 'Media', permissionToEnter: true, submittedDate: '2024-07-14T10:00:00Z', status: 'Completada/Cerrada', feedbackRating: 5, feedbackComments: 'Trabajo rápido y muy profesional. El cristal quedó perfecto.' },
-  { id: 'mock-req-007', title: 'Grifo de la cocina gotea sin parar', description: 'El grifo de la cocina no para de gotear, incluso estando cerrado.', category: 'Plomería', specificLocation: 'Cocina, grifo fregadero', urgency: 'Media', permissionToEnter: true, preferredEntryTime: 'Cualquier mañana entre 9am y 1pm', submittedDate: '2024-07-13T17:00:00Z', status: 'Enviada' },
-  { id: 'mock-req-008', title: 'Persiana del dormitorio pequeño atascada', description: 'La persiana del dormitorio pequeño no sube ni baja, parece atascada.', category: 'Otro', specificLocation: 'Dormitorio pequeño', urgency: 'Baja', permissionToEnter: true, submittedDate: '2024-07-12T12:00:00Z', status: 'Recibida' }
+// Updated initialMockData to conform to MaintenanceRequest type fully
+const initialMockData: MaintenanceRequest[] = [
+  { 
+    id: 'mock-req-001', 
+    tenantId: LOGGED_IN_TENANT_ID, 
+    propertyId: DEFAULT_PROPERTY_ID, 
+    tenantName: LOGGED_IN_TENANT_NAME,
+    title: 'Fuga en lavabo del baño', 
+    description: 'Hay una fuga constante de agua debajo del lavabo en el baño principal, parece venir de la tubería de desagüe.', 
+    category: 'Plomería', 
+    specificLocation: 'Baño principal, debajo del lavabo', 
+    urgency: 'Emergency', 
+    permissionToEnter: true, 
+    preferredEntryTime: 'Cualquier día por la mañana', 
+    submittedDate: '2024-07-20T09:30:00Z', 
+    createdAt: '2024-07-20T09:30:00Z', 
+    status: 'Sent' 
+  },
+  { 
+    id: 'mock-req-002', 
+    tenantId: LOGGED_IN_TENANT_ID, 
+    propertyId: DEFAULT_PROPERTY_ID, 
+    tenantName: LOGGED_IN_TENANT_NAME,
+    title: 'Aire acondicionado no enfría bien', 
+    description: 'El aire acondicionado de la sala de estar enciende pero no expulsa aire frío, solo ventila a temperatura ambiente.', 
+    category: 'Aire Acondicionado/Calefacción', 
+    specificLocation: 'Sala de estar', 
+    urgency: 'Medium', 
+    permissionToEnter: true, 
+    preferredEntryTime: 'Lunes o Miércoles de 2pm a 5pm', 
+    submittedDate: '2024-07-18T14:00:00Z', 
+    createdAt: '2024-07-18T14:00:00Z', 
+    status: 'In Progress', // Example status, manager might set this
+    scheduledDate: '2024-07-22T10:00:00Z' 
+  },
+  { 
+    id: 'mock-req-003', 
+    tenantId: LOGGED_IN_TENANT_ID, 
+    propertyId: DEFAULT_PROPERTY_ID, 
+    tenantName: LOGGED_IN_TENANT_NAME,
+    title: 'Bombilla principal de cocina quemada', 
+    description: 'Una de las bombillas principales del techo de la cocina se quemó y necesito ayuda para reemplazarla ya que está muy alta.', 
+    category: 'Electricidad', 
+    specificLocation: 'Cocina, luz de techo', 
+    urgency: 'Low', 
+    permissionToEnter: false, 
+    submittedDate: '2024-07-17T11:00:00Z', 
+    createdAt: '2024-07-17T11:00:00Z', 
+    status: 'Received' // Example status
+  },
+  { 
+    id: 'mock-req-004', 
+    tenantId: LOGGED_IN_TENANT_ID, 
+    propertyId: DEFAULT_PROPERTY_ID, 
+    tenantName: LOGGED_IN_TENANT_NAME,
+    title: 'Puerta de entrada no cierra correctamente', 
+    description: 'La puerta de entrada roza con el marco y cuesta cerrarla.', 
+    category: 'Cerrajería', 
+    specificLocation: 'Puerta de entrada principal', 
+    urgency: 'Medium', 
+    permissionToEnter: true, 
+    submittedDate: '2024-07-16T08:00:00Z', 
+    createdAt: '2024-07-16T08:00:00Z', 
+    status: 'Scheduled', // Example status
+    scheduledDate: '2024-07-23T15:00:00Z' 
+  },
+  { 
+    id: 'mock-req-005', 
+    tenantId: LOGGED_IN_TENANT_ID, 
+    propertyId: DEFAULT_PROPERTY_ID, 
+    tenantName: LOGGED_IN_TENANT_NAME,
+    title: 'Mancha de humedad en techo del dormitorio', 
+    description: 'Ha aparecido una mancha de humedad en el techo del dormitorio principal.', 
+    category: 'Pintura', 
+    specificLocation: 'Dormitorio principal, techo', 
+    urgency: 'Low', 
+    permissionToEnter: true, 
+    submittedDate: '2024-07-15T16:00:00Z', 
+    createdAt: '2024-07-15T16:00:00Z', 
+    status: 'Resolved/Pending Review' // Example status
+  }, 
+  { 
+    id: 'mock-req-006', 
+    tenantId: LOGGED_IN_TENANT_ID, 
+    propertyId: DEFAULT_PROPERTY_ID, 
+    tenantName: LOGGED_IN_TENANT_NAME,
+    title: 'Cristal de ventana de salón rajado', 
+    description: 'El cristal de una de las ventanas del salón tiene una raja.', 
+    category: 'Otro', 
+    specificLocation: 'Salón, ventana izquierda', 
+    urgency: 'Medium', 
+    permissionToEnter: true, 
+    submittedDate: '2024-07-14T10:00:00Z', 
+    createdAt: '2024-07-14T10:00:00Z', 
+    status: 'Completed', // Example status
+    feedbackRating: 5, 
+    feedbackComments: 'Trabajo rápido y muy profesional. El cristal quedó perfecto.' 
+  },
+  { 
+    id: 'mock-req-007', 
+    tenantId: LOGGED_IN_TENANT_ID, 
+    propertyId: DEFAULT_PROPERTY_ID, 
+    tenantName: LOGGED_IN_TENANT_NAME,
+    title: 'Grifo de la cocina gotea sin parar', 
+    description: 'El grifo de la cocina no para de gotear, incluso estando cerrado.', 
+    category: 'Plomería', 
+    specificLocation: 'Cocina, grifo fregadero', 
+    urgency: 'Medium', 
+    permissionToEnter: true, 
+    preferredEntryTime: 'Cualquier mañana entre 9am y 1pm', 
+    submittedDate: '2024-07-13T17:00:00Z', 
+    createdAt: '2024-07-13T17:00:00Z', 
+    status: 'Sent' 
+  },
+  { 
+    id: 'mock-req-008', 
+    tenantId: LOGGED_IN_TENANT_ID, 
+    propertyId: DEFAULT_PROPERTY_ID, 
+    tenantName: LOGGED_IN_TENANT_NAME,
+    title: 'Persiana del dormitorio pequeño atascada', 
+    description: 'La persiana del dormitorio pequeño no sube ni baja, parece atascada.', 
+    category: 'Otro', 
+    specificLocation: 'Dormitorio pequeño', 
+    urgency: 'Low', 
+    permissionToEnter: true, 
+    submittedDate: '2024-07-12T12:00:00Z', 
+    createdAt: '2024-07-12T12:00:00Z', 
+    status: 'Received' // Example status
+  }
 ];
-
-// Assume a logged-in tenant ID for now
-const LOGGED_IN_TENANT_ID = 'TEN001'; 
 
 const TenantDashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -62,19 +183,23 @@ const TenantDashboard: React.FC = () => {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null); // Para la vista de detalles
   const [currentPage, setCurrentPage] = useState(1); // Estado para la página actual
   
-  const [maintenanceRequests, setMaintenanceRequests] = useState<DetailedMaintenanceRequest[]>(() => {
-    const storedRequests = localStorage.getItem(LOCAL_STORAGE_KEY);
+  const [maintenanceRequests, setMaintenanceRequests] = useState<MaintenanceRequest[]>(() => {
+    const storedRequests = localStorage.getItem(SHARED_LOCAL_STORAGE_KEY);
     if (storedRequests) {
       try {
-        const parsedRequests = JSON.parse(storedRequests) as DetailedMaintenanceRequest[];
-        // Simple validación para asegurar que es un array (podría ser más robusta)
-        return Array.isArray(parsedRequests) ? parsedRequests : initialMockData;
+        const parsedRequests = JSON.parse(storedRequests) as MaintenanceRequest[];
+        // Filter for this tenant's requests or all if that's the desired view here
+        // For now, load all and let UI decide if/how to filter for display
+        return Array.isArray(parsedRequests) ? parsedRequests : [];
       } catch (error) {
         console.error("Error parsing localStorage data:", error);
-        return initialMockData; // Fallback si hay error de parseo
+        return [];
       }
     } 
-    return initialMockData; // Fallback si no hay nada en localStorage
+    // If localStorage is empty, seed it with this tenant's specific mock data.
+    // The manager dashboard can seed its own if it loads first and finds it empty.
+    localStorage.setItem(SHARED_LOCAL_STORAGE_KEY, JSON.stringify(initialMockData.filter(req => req.tenantId === LOGGED_IN_TENANT_ID)));
+    return initialMockData.filter(req => req.tenantId === LOGGED_IN_TENANT_ID);
   });
 
   useEffect(() => {
@@ -83,16 +208,49 @@ const TenantDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(maintenanceRequests));
+    const allStoredRequestsJSON = localStorage.getItem(SHARED_LOCAL_STORAGE_KEY);
+    let allRequestsInStorage: MaintenanceRequest[] = [];
+    if (allStoredRequestsJSON) {
+        try {
+            const parsed = JSON.parse(allStoredRequestsJSON);
+            if (Array.isArray(parsed)) {
+                allRequestsInStorage = parsed;
+            }
+        } catch (e) {
+            console.error("Error parsing allStoredRequests from localStorage during save", e);
+        }
+    }
+
+    // Merge current state (which includes newly added requests by this tenant)
+    // with whatever is already in storage.
+    const combinedRequests = [...allRequestsInStorage];
+    let newItemsAddedToStorage = false;
+
+    maintenanceRequests.forEach(localRequest => {
+        if (!combinedRequests.find(req => req.id === localRequest.id)) {
+            combinedRequests.push(localRequest);
+            newItemsAddedToStorage = true;
+        }
+        // Note: This doesn't handle updates to existing requests from this tenant in the shared list.
+        // For that, one would need to find and replace, or use a more robust state management.
+    });
+
+    if (newItemsAddedToStorage) {
+        localStorage.setItem(SHARED_LOCAL_STORAGE_KEY, JSON.stringify(combinedRequests));
+    }
+    // The `maintenanceRequests` state for TenantDashboard will display all requests from shared storage.
+    // Filtering for *this tenant* specifically for display can be done in the rendering logic if needed,
+    // or the initial load can filter, but saving should always save all.
+
   }, [maintenanceRequests]);
 
   // Mock data for tenant info (can be enhanced)
   const tenant = {
-    id: LOGGED_IN_TENANT_ID, // Add tenantId here
-    name: "Elena Pérez", // This name might not match TEN001 in mock data
+    id: LOGGED_IN_TENANT_ID,
+    name: LOGGED_IN_TENANT_NAME,
     unit: "Edificio Sol - Apt 3B",
     address: "Calle Luna 45, Ciudad Jardín",
-    initials: "EP"
+    initials: LOGGED_IN_TENANT_NAME.split(' ').map(n=>n[0]).join('')
   };
 
   const paymentInfo = {
@@ -137,18 +295,22 @@ const TenantDashboard: React.FC = () => {
   };
 
   const handleMaintenanceSubmit = (formData: MaintenanceRequestFormData) => {
-    const newRequest: DetailedMaintenanceRequest = {
-      id: 'user-' + new Date().toISOString() + Math.random().toString(36).substring(2,9), // ID único simple
+    const nowISO = new Date().toISOString();
+    const newRequest: MaintenanceRequest = {
+      id: 'user-' + nowISO + Math.random().toString(36).substring(2,9),
+      tenantId: tenant.id,
+      tenantName: tenant.name,
+      propertyId: tenant.unit.includes('PROP') ? tenant.unit.split('-')[0].trim() : DEFAULT_PROPERTY_ID, // Basic logic for propertyId
       title: formData.description.substring(0, 50) + (formData.description.length > 50 ? '...' : ''),
       description: formData.description,
       category: formData.category,
       specificLocation: formData.specificLocation,
-      urgency: formData.urgency,
+      urgency: formData.urgency === 'Alta/Emergencia' ? 'Emergency' : formData.urgency === 'Media' ? 'Medium' : 'Low',
       permissionToEnter: formData.permissionToEnter,
       preferredEntryTime: formData.preferredEntryTime,
-      submittedDate: new Date().toISOString(),
-      status: 'Enviada',
-      // Los campos de feedback y manager se llenarán después
+      submittedDate: nowISO,
+      createdAt: nowISO,
+      status: 'Sent',
     };
     setMaintenanceRequests(prevRequests => [newRequest, ...prevRequests]);
     setCurrentPage(1); 
@@ -162,8 +324,10 @@ const TenantDashboard: React.FC = () => {
   // Lógica de Paginación
   const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentRequestsToDisplay = maintenanceRequests.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(maintenanceRequests.length / ITEMS_PER_PAGE);
+  // Displaying requests for the current tenant from the shared list
+  const tenantSpecificRequests = maintenanceRequests.filter(req => req.tenantId === LOGGED_IN_TENANT_ID);
+  const currentRequestsToDisplay = tenantSpecificRequests.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(tenantSpecificRequests.length / ITEMS_PER_PAGE);
 
   const paginate = (pageNumber: number) => {
     if (pageNumber > 0 && pageNumber <= totalPages && pageNumber !== currentPage) {
@@ -175,11 +339,16 @@ const TenantDashboard: React.FC = () => {
   const renderMainContent = () => {
     switch (activeView) {
       case 'dashboard':
+        const activeTenantRequests = maintenanceRequests.filter(r => r.tenantId === LOGGED_IN_TENANT_ID && r.status !== 'Completed' && r.status !== 'Cancelled').length;
+        const pendingTenantRequests = maintenanceRequests.filter(r => r.tenantId === LOGGED_IN_TENANT_ID && (r.status === 'Sent' || r.status === 'Received')).length;
+        const inProgressOrScheduledTenantRequests = maintenanceRequests.filter(r => r.tenantId === LOGGED_IN_TENANT_ID && (r.status === 'In Progress' || r.status === 'Scheduled')).length;
+        const resolvedOrPendingReviewTenantRequests = maintenanceRequests.filter(r => r.tenantId === LOGGED_IN_TENANT_ID && (r.status === 'Completed' || r.status === 'Resolved/Pending Review')).length;
+
         return (
           <>
             <div className="quick-stats">
               <div className="stat-card stat-payment"><div className="stat-icon">💰</div><div className="stat-content"><h3>Próximo Pago</h3><p className="stat-value">${paymentInfo.nextPayment.amount.toFixed(2)}</p><p className="stat-detail">Vence el {paymentInfo.nextPayment.dueDate}</p></div></div>
-              <div className="stat-card stat-maintenance"><div className="stat-icon">🔧</div><div className="stat-content"><h3>Solicitudes Activas</h3><p className="stat-value">{maintenanceRequests.filter(r => r.status !== 'Completada/Cerrada' && r.status !== 'Cancelada').length}</p><p className="stat-detail">{maintenanceRequests.filter(r => r.status === 'Enviada' || r.status === 'Recibida').length} pendientes</p></div></div>
+              <div className="stat-card stat-maintenance"><div className="stat-icon">🔧</div><div className="stat-content"><h3>Solicitudes Activas</h3><p className="stat-value">{activeTenantRequests}</p><p className="stat-detail">{pendingTenantRequests} pendientes</p></div></div>
               <div className="stat-card stat-notifications"><div className="stat-icon">📬</div><div className="stat-content"><h3>Notificaciones</h3><p className="stat-value">{notificationsData.filter(n => n.unread).length}</p><p className="stat-detail">Sin leer</p></div></div>
               <div className="stat-card stat-unit"><div className="stat-icon">🏢</div><div className="stat-content"><h3>Mi Unidad</h3><p className="stat-value">{(tenant.unit.split(' - ')[1] || 'N/A').trim()}</p><p className="stat-detail">{(tenant.unit.split(' - ')[0] || 'N/A').trim()}</p></div></div>
             </div>
@@ -234,15 +403,15 @@ const TenantDashboard: React.FC = () => {
                 <section className="dashboard-section maintenance-section">
                     <h2 className="section-title">🔧 Solicitudes de Mantenimiento</h2>
                     <div className="maintenance-stats">
-                        <div className="maint-stat"><div className="maint-stat-icon pending">⏳</div><div className="maint-stat-info"><span className="maint-stat-value">{maintenanceRequests.filter(r => r.status === 'Enviada' || r.status === 'Recibida').length}</span><span className="maint-stat-label">Pendientes</span></div></div>
-                        <div className="maint-stat"><div className="maint-stat-icon progress">🔄</div><div className="maint-stat-info"><span className="maint-stat-value">{maintenanceRequests.filter(r => r.status === 'En Progreso' || r.status === 'Programada').length}</span><span className="maint-stat-label">En Progreso</span></div></div>
-                        <div className="maint-stat"><div className="maint-stat-icon completed">✅</div><div className="maint-stat-info"><span className="maint-stat-value">{maintenanceRequests.filter(r => r.status === 'Completada/Cerrada' || r.status === 'Resuelta/Pendiente de Valoración').length}</span><span className="maint-stat-label">Resueltas</span></div></div>
+                        <div className="maint-stat"><div className="maint-stat-icon pending">⏳</div><div className="maint-stat-info"><span className="maint-stat-value">{pendingTenantRequests}</span><span className="maint-stat-label">Pendientes</span></div></div>
+                        <div className="maint-stat"><div className="maint-stat-icon progress">🔄</div><div className="maint-stat-info"><span className="maint-stat-value">{inProgressOrScheduledTenantRequests}</span><span className="maint-stat-label">En Progreso</span></div></div>
+                        <div className="maint-stat"><div className="maint-stat-icon completed">✅</div><div className="maint-stat-info"><span className="maint-stat-value">{resolvedOrPendingReviewTenantRequests}</span><span className="maint-stat-label">Resueltas</span></div></div>
                     </div>
                     <div className="maintenance-list-summary">
                         <h4>Últimas Solicitudes</h4>
-                        {maintenanceRequests.length > 0 ? (
+                        {tenantSpecificRequests.length > 0 ? (
                             <ul className="maintenance-requests-list">
-                                {maintenanceRequests.slice(0, Math.min(3, maintenanceRequests.length)).map(req => (
+                                {tenantSpecificRequests.slice(0, Math.min(3, tenantSpecificRequests.length)).map(req => (
                                 <MaintenanceRequestListItem key={req.id} request={req} onViewDetails={handleViewMaintenanceDetails} />
                                 ))}
                             </ul>
@@ -272,40 +441,60 @@ const TenantDashboard: React.FC = () => {
       case 'maintenance':
         return (
           <section className="dashboard-section maintenance-view-section">
-            <MaintenanceRequestForm onSubmit={handleMaintenanceSubmit} />
-            <div className="existing-requests-container" style={{marginTop: '30px'}}>
-              <h3>Mis Solicitudes de Mantenimiento</h3>
-              {maintenanceRequests.length > 0 ? (
+            <div className="dashboard-section maintenance-form-container">
+              <h2 className="section-title">Crear Nueva Solicitud de Mantenimiento</h2>
+              <MaintenanceRequestForm onSubmit={handleMaintenanceSubmit} />
+            </div>
+            
+            <div className="dashboard-section existing-requests-container" style={{marginTop: '40px'}}>
+              <h3 className="section-title">Mis Solicitudes</h3>
+              {tenantSpecificRequests.length > 0 ? (
                 <>
-                  <ul className="maintenance-requests-list"> 
-                    {currentRequestsToDisplay.map(req => ( 
+                  <ul className="maintenance-requests-list">
+                    {currentRequestsToDisplay.map(req => (
                       <MaintenanceRequestListItem key={req.id} request={req} onViewDetails={handleViewMaintenanceDetails} />
                     ))}
                   </ul>
                   {totalPages > 1 && (
-                    <div className="pagination-controls">
-                      <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} aria-label="Página anterior">
+                    <div className="pagination-controls-modern">
+                      <button 
+                        onClick={() => paginate(currentPage - 1)} 
+                        disabled={currentPage === 1} 
+                        aria-label="Página anterior"
+                        className="pagination-arrow"
+                      >
                         &laquo; Anterior
                       </button>
-                      {[...Array(totalPages).keys()].map(num => (
-                        <button 
-                          key={num + 1} 
-                          onClick={() => paginate(num + 1)} 
-                          className={`page-button ${currentPage === num + 1 ? 'active-page' : ''}`}
-                          aria-current={currentPage === num + 1 ? 'page' : undefined}
-                          aria-label={`Ir a página ${num + 1}`}
-                        >
-                          {num + 1}
-                        </button>
-                      ))}
-                      <button onClick={() => paginate(currentPage + 1)} disabled={currentPage === totalPages} aria-label="Página siguiente">
+                      <div className="page-numbers">
+                        {[...Array(totalPages).keys()].map(num => (
+                          <button 
+                            key={num + 1} 
+                            onClick={() => paginate(num + 1)} 
+                            className={`page-button-modern ${currentPage === num + 1 ? 'active-page-modern' : ''}`}
+                            aria-current={currentPage === num + 1 ? 'page' : undefined}
+                            aria-label={`Ir a página ${num + 1}`}
+                          >
+                            {num + 1}
+                          </button>
+                        ))}
+                      </div>
+                      <button 
+                        onClick={() => paginate(currentPage + 1)} 
+                        disabled={currentPage === totalPages} 
+                        aria-label="Página siguiente"
+                        className="pagination-arrow"
+                      >
                         Siguiente &raquo;
                       </button>
                     </div>
                   )}
                 </>
               ) : (
-                <p>No tienes solicitudes de mantenimiento activas. ¡Crea una nueva usando el formulario de arriba!</p>
+                <div className="empty-state">
+                  <span className="empty-state-icon">🛠️</span>
+                  <p className="empty-state-message">No tienes solicitudes de mantenimiento activas.</p>
+                  <p className="empty-state-suggestion">¡Crea una nueva usando el formulario de arriba!</p>
+                </div>
               )}
             </div>
           </section>
@@ -314,49 +503,122 @@ const TenantDashboard: React.FC = () => {
         const request = maintenanceRequests.find(r => r.id === selectedRequestId);
         if (!request) return (
             <section className="dashboard-section">
-                <p>Solicitud no encontrada o ID no seleccionado.</p>
-                <button onClick={() => handleNavClick('maintenance')} className="back-to-list-btn" style={{marginTop: '10px'}}>← Volver a la lista</button>
+                 <div className="dashboard-section centered-message">
+                    <p>Solicitud no encontrada o ID no seleccionado.</p>
+                    <button 
+                        onClick={() => handleNavClick('maintenance')} 
+                        className="action-btn"
+                        style={{marginTop: '20px'}}
+                    >
+                        ← Volver a la lista
+                    </button>
+                </div>
             </section>
         );
+
+        const submittedDateDisplay = request.submittedDate ? new Date(request.submittedDate).toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+        const scheduledDateDisplay = request.scheduledDate ? new Date(request.scheduledDate).toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+        const resolutionDateDisplay = request.resolutionDate ? new Date(request.resolutionDate).toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+
         return (
           <section className="dashboard-section maintenance-detail-view">
-            <button onClick={() => handleNavClick('maintenance')} className="back-to-list-btn">← Volver a la lista</button>
-            <h3>Detalle de la Solicitud</h3>
-            <div className="request-detail-card">
-                <p><strong>ID de Solicitud:</strong> {request.id}</p>
-                <p><strong>Título:</strong> {request.title || 'N/A'}</p>
-                <p><strong>Descripción Completa:</strong> {request.description}</p>
-                <p><strong>Categoría:</strong> {request.category}</p>
-                <p><strong>Ubicación Específica:</strong> {request.specificLocation}</p>
-                <p><strong>Nivel de Urgencia:</strong> <span className={`urgency-tag urgency-${request.urgency.toLowerCase().replace(/[\s/]+/g, '-')}`}>{request.urgency}</span></p>
-                <p><strong>Permiso de Entrada Otorgado:</strong> {request.permissionToEnter ? 'Sí' : 'No'}</p>
-                {request.permissionToEnter && request.preferredEntryTime && (
-                    <p><strong>Franja Horaria Preferida:</strong> {request.preferredEntryTime}</p>
-                )}
-                <p><strong>Fecha de Envío:</strong> {new Date(request.submittedDate).toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                <p><strong>Estado Actual:</strong> <span className={`status-badge status-${request.status.toLowerCase().replace(/[\s/]+/g, '-')}`}>{request.status}</span></p>
-                {request.scheduledDate && (
-                    <p><strong>Fecha Programada para Atención:</strong> {new Date(request.scheduledDate).toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                )}
-                {request.resolutionDate && (
-                    <p><strong>Fecha de Resolución:</strong> {new Date(request.resolutionDate).toLocaleString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                )}
+            <button 
+                onClick={() => handleNavClick('maintenance')} 
+                className="action-btn back-to-list-btn"
+                style={{marginBottom: '25px'}}
+            >
+                <span className="icon-arrow-left">←</span> Volver a la lista
+            </button>
+            
+            <div className="dashboard-section request-detail-card">
+                <div className="detail-header">
+                    <h3 className="section-title">{request.title || 'Detalle de Solicitud'}</h3>
+                    <span className={`status-badge status-${request.status.toLowerCase().replace(/[/\\s]+/g, '-')}`}>
+                        {request.status}
+                    </span>
+                </div>
+
+                <div className="detail-grid">
+                    <div className="detail-item">
+                        <strong className="detail-label">ID de Solicitud:</strong>
+                        <span className="detail-value">{request.id}</span>
+                    </div>
+                    <div className="detail-item">
+                        <strong className="detail-label">Inquilino:</strong>
+                        <span className="detail-value">{request.tenantName || 'N/A'} (ID: {request.tenantId})</span>
+                    </div>
+                    <div className="detail-item">
+                        <strong className="detail-label">Propiedad:</strong>
+                        <span className="detail-value">{request.propertyId}</span>
+                    </div>
+                     <div className="detail-item">
+                        <strong className="detail-label">Categoría:</strong>
+                        <span className="detail-value">{request.category}</span>
+                    </div>
+                    <div className="detail-item">
+                        <strong className="detail-label">Ubicación Específica:</strong>
+                        <span className="detail-value">{request.specificLocation}</span>
+                    </div>
+                    <div className="detail-item">
+                        <strong className="detail-label">Nivel de Urgencia:</strong>
+                        <span className={`urgency-tag urgency-${request.urgency.toLowerCase().replace(/[/\\s]+/g, '-')}`}>
+                            {request.urgency}
+                        </span>
+                    </div>
+                    <div className="detail-item full-width">
+                        <strong className="detail-label">Descripción Completa:</strong>
+                        <p className="detail-value-paragraph">{request.description}</p>
+                    </div>
+                   
+                    <div className="detail-item">
+                        <strong className="detail-label">Permiso de Entrada:</strong>
+                        <span className="detail-value">{request.permissionToEnter ? 'Sí' : 'No'}</span>
+                    </div>
+                    {request.permissionToEnter && request.preferredEntryTime && (
+                        <div className="detail-item">
+                            <strong className="detail-label">Franja Horaria Preferida:</strong>
+                            <span className="detail-value">{request.preferredEntryTime}</span>
+                        </div>
+                    )}
+                    <div className="detail-item">
+                        <strong className="detail-label">Fecha de Envío:</strong>
+                        <span className="detail-value">{submittedDateDisplay}</span>
+                    </div>
+                    {request.status === 'Scheduled' && request.scheduledDate && (
+                        <div className="detail-item">
+                            <strong className="detail-label">Fecha Programada:</strong>
+                            <span className="detail-value">{scheduledDateDisplay}</span>
+                        </div>
+                    )}
+                    {(request.status === 'Completed' || request.status === 'Resolved/Pending Review') && request.resolutionDate && (
+                        <div className="detail-item">
+                            <strong className="detail-label">Fecha de Resolución:</strong>
+                            <span className="detail-value">{resolutionDateDisplay}</span>
+                        </div>
+                    )}
+                </div>
+
                 {request.managerNotes && (
-                    <p><strong>Notas del Administrador:</strong> {request.managerNotes}</p>
+                    <div className="manager-notes-section">
+                        <h4 className="section-title">Notas del Administrador:</h4>
+                        <p className="notes-content">{request.managerNotes}</p>
+                    </div>
                 )}
-                {/* --- Sección de Valoración --- */}
-                {request.status === 'Resuelta/Pendiente de Valoración' && (
-                    <div className="feedback-section" style={{marginTop: '20px', paddingTop: '20px', borderTop: '1px solid #eee'}}>
-                        <h4>Valora este servicio</h4>
-                        {request.feedbackRating ? (
-                            <div>
-                                <p><strong>Tu valoración:</strong> {request.feedbackRating}/5 estrellas</p>
+
+                {request.status === 'Resolved/Pending Review' && (
+                    <div className="feedback-section-modern">
+                        <h4 className="section-title">Valora este servicio</h4>
+                        {request.feedbackRating || request.feedbackComments ? (
+                            <div className="feedback-display">
+                                {request.feedbackRating && <p><strong>Tu valoración:</strong> <span className="rating-stars">{Array(request.feedbackRating).fill('⭐').join('')}</span> ({request.feedbackRating}/5)</p>}
                                 {request.feedbackComments && <p><strong>Tus comentarios:</strong> {request.feedbackComments}</p>}
-                                <p><em><small>Valoración ya enviada. ¡Gracias!</small></em></p>
+                                <p className="feedback-submitted-message"><em><small>Valoración ya enviada. ¡Gracias!</small></em></p>
                             </div>
                         ) : (
-                            <p><em>(Aquí implementaremos el FeedbackForm para la solicitud con ID: {request.id})</em></p>
-                            // <FeedbackForm requestId={request.id} onSubmit={handleFeedbackSubmitFunction} />
+                            <div className="feedback-form-placeholder">
+                                <p><em>(Aquí implementaremos el FeedbackForm para la solicitud con ID: {request.id})</em></p>
+                                {/* <FeedbackForm requestId={request.id} onSubmit={handleFeedbackSubmitFunction} /> */}
+                            </div>
                         )}
                     </div>
                 )}
@@ -364,7 +626,7 @@ const TenantDashboard: React.FC = () => {
           </section>
         );
       case 'documents':
-        return <section className="dashboard-section"><h2 className="section-title">�� Documentos</h2><p>El contenido de la sección de Documentos irá aquí.</p></section>;
+        return <section className="dashboard-section"><h2 className="section-title">📄 Documentos</h2><p>El contenido de la sección de Documentos irá aquí.</p></section>;
       case 'messages':
         return <section className="dashboard-section"><h2 className="section-title">💬 Mensajes</h2><p>El contenido de la sección de Mensajes irá aquí.</p></section>;
       case 'profile':
