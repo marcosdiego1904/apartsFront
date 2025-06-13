@@ -110,3 +110,10 @@ export interface ChargeRecord {
   status: 'pending' | 'paid';
   paymentId?: string; // ID del PaymentRecordProperties que saldó este cargo
 }
+
+export interface PaymentDetails {
+  cardNumber: string;
+  cardHolderName: string;
+  expiryDate: string;
+  cvv: string;
+}

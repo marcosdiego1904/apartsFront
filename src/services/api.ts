@@ -131,3 +131,29 @@ export const deleteUnitById = async (id: number): Promise<void> => {
 export const deleteUserById = async (id: number): Promise<void> => {
     await axios.delete(`${API_BASE_URL}/users/${id}`);
 };
+
+// -------------------- FUNCIONES DE SEED PARA DATOS DE EJEMPLO --------------------
+
+// Función para poblar usuarios de ejemplo
+export const seedSampleUsers = async (): Promise<{ message: string; usersCreated: number }> => {
+    const response = await axios.post<{ message: string; usersCreated: number }>(`${API_BASE_URL}/seed/users`);
+    return response.data;
+};
+
+// Función para poblar unidades de ejemplo
+export const seedSampleUnits = async (): Promise<{ message: string; unitsCreated: number }> => {
+    const response = await axios.post<{ message: string; unitsCreated: number }>(`${API_BASE_URL}/seed/units`);
+    return response.data;
+};
+
+// Función para poblar todo (usuarios y unidades)
+export const seedAllSampleData = async (): Promise<{ message: string; usersCreated: number; unitsCreated: number }> => {
+    const response = await axios.post<{ message: string; usersCreated: number; unitsCreated: number }>(`${API_BASE_URL}/seed/all`);
+    return response.data;
+};
+
+// Función para verificar si hay datos en el sistema
+export const checkDataStatus = async (): Promise<{ hasUsers: boolean; hasUnits: boolean; userCount: number; unitCount: number }> => {
+    const response = await axios.get<{ hasUsers: boolean; hasUnits: boolean; userCount: number; unitCount: number }>(`${API_BASE_URL}/seed/status`);
+    return response.data;
+};

@@ -3,14 +3,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client'; // o 'dom' si usas la API vieja
 import App from './App';
 import { AuthProvider } from './context/AuthContext'; // Importa el Provider
-// import { BrowserRouter as Router } from 'react-router-dom'; // Si usas router
+// import { BrowserRouter as Router } from 'react-router-dom'; // Si usas router // Comentado si App.tsx ya tiene Router
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider> {/* Envuelve tu aplicación con el AuthProvider */}
-      {/* <Router> */}
-         <App />
-      {/* </Router> */}
+    <AuthProvider> {/* AuthProvider envuelve App globalmente aquí */}
+      <App />
     </AuthProvider>
   </React.StrictMode>,
 );

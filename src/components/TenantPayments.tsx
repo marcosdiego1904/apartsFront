@@ -1,16 +1,9 @@
 import React, { useState, type ChangeEvent, type FormEvent, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import type { User, PaymentRecordProperties, ChargeRecord } from '../types'; // Importar los tipos centralizados
+import type { User, PaymentRecordProperties, ChargeRecord, PaymentDetails } from '../types'; // Importar los tipos centralizados
+import { getMonthYearString, getFirstDayOfMonth, getFirstDayOfNextMonth, getSortableDateFromConcept, determineNextPayableMonth } from '../utils/dateUtils';
 
-// Interfaces (duplicadas temporalmente, podrían moverse a un archivo types común si no están ya)
-interface PaymentDetails {
-  cardNumber: string;
-  cardHolderName: string;
-  expiryDate: string;
-  cvv: string;
-}
-
-// Constantes (duplicadas temporalmente)
+// Constantes
 const PREDETERMINED_CARD = {
   NUMBER: '1122233',
   EXPIRY_DATE: '12/25',
@@ -22,64 +15,11 @@ const LOCAL_STORAGE_CHARGES_HISTORY_KEY = 'tenantChargesHistory'; // Nueva const
 const DEFAULT_MONTHLY_AMOUNT = 150.75;
 const PAYMENT_DUE_DAY = 15;
 
-// Funciones helper de fecha (duplicadas temporalmente)
-const getMonthYearString = (date: Date): string => {
-  return date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
-};
+interface TenantPaymentsProps {
+  onPaymentSuccess?: () => void;
+}
 
-const getFirstDayOfMonth = (date: Date): Date => {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-};
-
-const getFirstDayOfNextMonth = (date: Date): Date => {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 1);
-};
-
-// Helper para convertir "Alquiler Mes de Año" a un objeto Date para ordenar
-const getSortableDateFromConcept = (concept: string): Date | null => {
-  const monthNames: { [key: string]: number } = {
-    enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5,
-    julio: 6, agosto: 7, septiembre: 8, octubre: 9, noviembre: 10, diciembre: 11
-  };
-  const parts = concept.toLowerCase().split(' '); // e.g., ["alquiler", "mayo", "de", "2025"]
-  if (parts.length < 4 || parts[0] !== 'alquiler') {
-    return null; // Formato no esperado
-  }
-  const monthName = parts[1];
-  const yearStr = parts[3];
-  
-  const month = monthNames[monthName];
-  const year = parseInt(yearStr, 10);
-
-  if (month !== undefined && !isNaN(year)) {
-    return new Date(year, month, 1);
-  }
-  return null;
-};
-
-// Nueva función para determinar el primer mes pagable
-const determineNextPayableMonth = (tenantPayments: PaymentRecordProperties[], initialDate: Date | null): Date | null => {
-  if (!initialDate) return null; // Si no hay fecha inicial, no podemos determinar.
-  let currentDate = getFirstDayOfMonth(new Date(initialDate)); 
-
-  const completedPaymentsConcepts = tenantPayments
-    .filter(p => p.status === 'completed')
-    .map(p => p.concept);
-  
-  let attempts = 0; // Evitar bucles infinitos en casos extraños
-  // eslint-disable-next-line no-constant-condition
-  while (attempts < 240) { // Buscar hasta 20 años en el futuro
-    const conceptOfMonth = `Alquiler ${getMonthYearString(currentDate)}`;
-    if (!completedPaymentsConcepts.includes(conceptOfMonth)) {
-      return currentDate; 
-    }
-    currentDate = getFirstDayOfNextMonth(currentDate);
-    attempts++;
-  }
-  return null; // No se encontró un mes pagable (todos los meses futuros están "pagados")
-};
-
-const TenantPayments: React.FC = () => {
+const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => {
   const { user } = useAuth();
   const isInitialMount = useRef(true);
 
@@ -221,7 +161,29 @@ const TenantPayments: React.FC = () => {
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
-    setPaymentDetails(prevDetails => ({ ...prevDetails, [name]: value }));
+    let formattedValue = value;
+
+    if (name === 'cardNumber') {
+      // Remove non-digits, allow spaces for formatting if desired (currently just strips non-digits)
+      // Limit to 19 characters (e.g., 16 digits + 3 spaces)
+      formattedValue = value.replace(/[^0-9]/g, '').slice(0, 16);
+      // Optional: Add spaces for readability e.g. XXXX XXXX XXXX XXXX
+      // formattedValue = formattedValue.replace(/(\d{4})(?=\d)/g, '$1 ').trim().slice(0, 19);
+    } else if (name === 'expiryDate') {
+      // MM/YY format
+      formattedValue = value.replace(/[^0-9]/g, '');
+      if (formattedValue.length > 2) {
+        formattedValue = formattedValue.slice(0, 2) + '/' + formattedValue.slice(2, 4);
+      } else if (value.length === 3 && value.includes('/')) { // Handle backspace from MM/Y to MM
+         formattedValue = value.slice(0,2);
+      }
+      formattedValue = formattedValue.slice(0, 5); // MM/YY
+    } else if (name === 'cvv') {
+      // Limit to 3 or 4 digits
+      formattedValue = value.replace(/[^0-9]/g, '').slice(0, 4);
+    }
+
+    setPaymentDetails((prevDetails: PaymentDetails) => ({ ...prevDetails, [name]: formattedValue }));
   };
 
   const handleChargeSelectionChange = (chargeId: string) => {
@@ -313,7 +275,11 @@ const TenantPayments: React.FC = () => {
       setTenantViewHistory(updatedHistory);
 
       // Actualizar historial de cargos
-      localStorage.setItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY, JSON.stringify(updatedCharges));
+      const updatedChargesFromStorage: ChargeRecord[] = JSON.parse(localStorage.getItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY) || '[]');
+      const otherTenantCharges = updatedChargesFromStorage.filter(c => c.tenantId !== user.id);
+      const finalCharges = [...otherTenantCharges, ...updatedCharges.filter(c => c.tenantId === user.id)];
+      localStorage.setItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY, JSON.stringify(finalCharges));
+      
       setTenantCharges(updatedCharges); // Actualizar estado local de cargos
       setSelectedCharges([]); // Limpiar selección
 
@@ -329,6 +295,10 @@ const TenantPayments: React.FC = () => {
       // El totalAmountToPay se recalculará via useEffect.
 
       alert('Pago realizado con éxito!');
+
+      if (onPaymentSuccess) {
+        onPaymentSuccess();
+      }
     } else {
       setPaymentError('Los detalles de la tarjeta son incorrectos. Por favor, usa los datos de demostración proporcionados e intenta de nuevo.');
     }
@@ -471,175 +441,153 @@ const TenantPayments: React.FC = () => {
             <h3 style={cardTitleStyle}>Realizar Pago</h3>
             <div 
                 style={{
-                  backgroundColor: 'var(--bg-tertiary)', 
-                  border: '1px solid var(--border-secondary)',
-                  borderLeft: '5px solid var(--accent-info)',
-                  padding: '1.25rem',
-                  borderRadius: '0.75rem',
-                  marginBottom: '2.5rem',
-                  color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-secondary, #ccc)',
+                    padding: '2rem',
+                    borderRadius: '0.75rem',
+                    backgroundColor: 'var(--bg-tertiary, #f9f9f9)',
                 }}
-              >
-                <h4 style={{ marginTop: 0, marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', fontSize: '1.15em' }}>
-                  <span role="img" aria-label="info" style={{ marginRight: '0.75rem', fontSize: '1.3em', color: 'var(--accent-info)' }}>ℹ️</span>
-                  Utiliza estos datos para el pago de demostración:
-                </h4>
-                <ul style={{ listStyle: 'none', paddingLeft: 0, fontSize: '0.95em' }}>
-                  <li style={{ marginBottom: '0.6rem' }}>
-                    Número de Tarjeta: 
-                    <code style={{ backgroundColor: 'var(--bg-secondary)', padding: '0.3em 0.6em', borderRadius: '4px', color: 'var(--text-primary)', marginLeft: '0.5rem' }}>
-                      {PREDETERMINED_CARD.NUMBER}
-                    </code>
-                  </li>
-                  <li style={{ marginBottom: '0.6rem' }}>
-                    Fecha de Expiración (MM/YY): 
-                    <code style={{ backgroundColor: 'var(--bg-secondary)', padding: '0.3em 0.6em', borderRadius: '4px', color: 'var(--text-primary)', marginLeft: '0.5rem' }}>
-                      {PREDETERMINED_CARD.EXPIRY_DATE}
-                    </code>
-                  </li>
-                  <li>
-                    CVV: 
-                    <code style={{ backgroundColor: 'var(--bg-secondary)', padding: '0.3em 0.6em', borderRadius: '4px', color: 'var(--text-primary)', marginLeft: '0.5rem' }}>
-                      {PREDETERMINED_CARD.CVV}
-                    </code>
-                  </li>
-                </ul>
-              </div>
+            >
+                <form onSubmit={handleSubmitPayment}>
+                    <div style={{ marginBottom: '1.5rem', fontFamily: 'monospace', fontSize: '0.9rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-code-block, #e9ecef)', padding: '1rem', borderRadius: '0.5rem' }}>
+                        <p style={{margin: 0, fontWeight: 'bold'}}>Datos de la Tarjeta de Demostración:</p>
+                        <p style={{margin: '0.25rem 0'}}>Número: 1122233</p>
+                        <p style={{margin: '0.25rem 0'}}>Nombre: Demo User</p>
+                        <p style={{margin: '0.25rem 0'}}>Vencimiento: 12/25</p>
+                        <p style={{margin: '0.25rem 0'}}>CVV: 123</p>
+                    </div>
 
-              <form onSubmit={handleSubmitPayment} className="payment-form">
-                <h4 style={{fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1.5rem'}}>Detalles de la Tarjeta</h4>
-                <div className="form-grid form-grid-cols-2">
-                  <div className="form-group">
-                    <label htmlFor="cardHolderName" className="form-label" style={{color: 'var(--text-secondary)'}}>Nombre del Titular:</label>
-                    <input
-                      type="text" id="cardHolderName" name="cardHolderName" className="form-input"
-                      value={paymentDetails.cardHolderName} onChange={handleInputChange} placeholder={PREDETERMINED_CARD.HOLDER_NAME} required
-                      style={{borderColor: 'var(--border-secondary)', color: 'var(--text-primary)'}}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="cardNumber" className="form-label" style={{color: 'var(--text-secondary)'}}>Número de Tarjeta:</label>
-                    <input
-                      type="text" id="cardNumber" name="cardNumber" className="form-input"
-                      value={paymentDetails.cardNumber} onChange={handleInputChange} placeholder={PREDETERMINED_CARD.NUMBER} required
-                      style={{borderColor: 'var(--border-secondary)', color: 'var(--text-primary)'}}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="expiryDate" className="form-label" style={{color: 'var(--text-secondary)'}}>Fecha de Expiración (MM/YY):</label>
-                    <input
-                      type="text" id="expiryDate" name="expiryDate" className="form-input"
-                      value={paymentDetails.expiryDate} onChange={handleInputChange} placeholder={PREDETERMINED_CARD.EXPIRY_DATE} required
-                      style={{borderColor: 'var(--border-secondary)', color: 'var(--text-primary)'}}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="cvv" className="form-label" style={{color: 'var(--text-secondary)'}}>CVV:</label>
-                    <input
-                      type="text" id="cvv" name="cvv" className="form-input"
-                      value={paymentDetails.cvv} onChange={handleInputChange} placeholder={PREDETERMINED_CARD.CVV} required
-                      style={{borderColor: 'var(--border-secondary)', color: 'var(--text-primary)'}}
-                    />
-                  </div>
-                </div>
-                {paymentError && (
-                  <p className="error-message payment-error" style={{marginTop: '1.5rem', color: 'var(--accent-danger-dark)', backgroundColor: 'var(--accent-danger-light)', padding: '0.75rem', borderRadius: '0.25rem'}}>{paymentError}</p>
-                )}
-                <button type="submit" className="btn btn-primary pay-submit-btn" 
-                  style={{ 
-                    marginTop: '2rem', 
-                    // Rely on .btn-primary for colors, or use CSS variables if defined for primary buttons
-                    // backgroundColor: 'var(--accent-primary-button, var(--accent-info))', 
-                    // borderColor: 'var(--accent-primary-button-border, var(--accent-info))', 
-                    // color: 'var(--accent-primary-button-text, #ffffff)', 
-                    padding: '0.75rem 1.5rem', 
-                    fontSize: '1rem',
-                    borderRadius: '0.5rem',
-                    cursor: 'pointer'
-                  }}>
-                  Pagar ${totalAmountToPay.toFixed(2)}
-                </button>
-              </form>
+                    <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                        <div className="form-group" style={{ flex: '1 1 100%'}}>
+                            <label htmlFor="cardHolderName" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Nombre del Titular</label>
+                            <input
+                                type="text"
+                                id="cardHolderName"
+                                name="cardHolderName"
+                                value={paymentDetails.cardHolderName}
+                                onChange={handleInputChange}
+                                required
+                                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+                            />
+                        </div>
+
+                        <div className="form-group" style={{ flex: '1 1 60%'}}>
+                            <label htmlFor="cardNumber" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Número de Tarjeta</label>
+                            <input
+                                type="text"
+                                id="cardNumber"
+                                name="cardNumber"
+                                value={paymentDetails.cardNumber}
+                                onChange={handleInputChange}
+                                required
+                                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+                                maxLength={19}
+                            />
+                        </div>
+
+                        <div className="form-group" style={{ flex: '1 1 20%'}}>
+                            <label htmlFor="expiryDate" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Vencimiento (MM/AA)</label>
+                            <input
+                                type="text"
+                                id="expiryDate"
+                                name="expiryDate"
+                                value={paymentDetails.expiryDate}
+                                onChange={handleInputChange}
+                                required
+                                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+                                placeholder="MM/AA"
+                            />
+                        </div>
+
+                        <div className="form-group" style={{ flex: '1 1 15%'}}>
+                            <label htmlFor="cvv" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>CVV</label>
+                            <input
+                                type="password"
+                                id="cvv"
+                                name="cvv"
+                                value={paymentDetails.cvv}
+                                onChange={handleInputChange}
+                                required
+                                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
+                                maxLength={4}
+                            />
+                        </div>
+                    </div>
+                    
+                    {paymentError && <p style={{ color: 'var(--accent-danger)', marginTop: '1.5rem', textAlign: 'center' }}>{paymentError}</p>}
+
+                    <button type="submit" className="submit-payment-button" style={{ 
+                        width: '100%', 
+                        padding: '1rem', 
+                        fontSize: '1.1rem', 
+                        fontWeight: 'bold', 
+                        color: '#fff', 
+                        backgroundColor: 'var(--accent-primary, #007bff)', 
+                        border: 'none', 
+                        borderRadius: '0.5rem', 
+                        cursor: 'pointer',
+                        marginTop: '2rem',
+                        transition: 'background-color 0.2s',
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-primary-dark, #0056b3)'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-primary, #007bff)'}
+                    >
+                        Pagar ${totalAmountToPay.toFixed(2)}
+                    </button>
+                </form>
+            </div>
         </section>
       )}
 
-      {/* Card 3: Future Payment Information */}
-      <section className="dashboard-section next-payment-info" style={cardStyle}>
-        <h3 style={cardTitleStyle}>Próximo Pago Programado</h3>
-        <p style={{color: 'var(--text-secondary)'}}><strong style={{color: 'var(--text-primary)'}}>Concepto:</strong> Alquiler {displayNextScheduledPaymentMonthStr}</p>
-        <p style={{color: 'var(--text-secondary)'}}><strong style={{color: 'var(--text-primary)'}}>Monto Estimado:</strong> ${DEFAULT_MONTHLY_AMOUNT.toFixed(2)} (solo alquiler)</p>
-        <p style={{color: 'var(--text-secondary)'}}><strong style={{color: 'var(--text-primary)'}}>Fecha de Vencimiento Estimada:</strong> {displayNextScheduledPaymentDueDateStr}</p>
-      </section>
-
-      {/* Card 4: Transaction History */}
-      <section className="dashboard-section transaction-history-card" style={cardStyle}>
+      {/* Card 3: Payment History */}
+      <section className="dashboard-section payment-history-card" style={cardStyle}>
         <h3 style={cardTitleStyle}>Historial de Transacciones</h3>
-        
-        <div className="payment-history-section" style={{marginBottom: '2.5rem'}}>
-            <h4 style={{fontSize: '1.15rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Mis Pagos Realizados</h4>
-            {tenantViewHistory.length > 0 ? (
-              <div className="table-container">
-                <table className="users-table" style={{borderColor: 'var(--border-secondary, #dee2e6)'}}>
-                  <thead>
+        <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <table className="payment-history-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-secondary, white)' }}>
                     <tr>
-                      <th style={{color: 'var(--text-secondary)'}}>Fecha</th>
-                      <th style={{color: 'var(--text-secondary)'}}>Concepto</th>
-                      <th style={{color: 'var(--text-secondary)'}}>Monto</th>
-                      <th style={{color: 'var(--text-secondary)'}}>Estado</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Fecha</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Concepto</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Monto</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Estado</th>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {tenantViewHistory.map((payment: PaymentRecordProperties) => (
-                      <tr key={payment.id}>
-                        <td data-label="Fecha" style={{color: 'var(--text-primary)'}}>{payment.date}</td>
-                        <td data-label="Concepto" style={{color: 'var(--text-primary)'}}>{payment.concept}</td>
-                        <td data-label="Monto" style={{color: 'var(--text-primary)'}}>${payment.amount.toFixed(2)}</td>
-                        <td data-label="Estado"><span className={`status-badge status-${payment.status.toLowerCase()}`}>{payment.status}</span></td> 
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p style={{color: 'var(--text-secondary)'}}>Aún no tienes historial de pagos.</p>
-            )}
-        </div>
-
-        <div className="charges-history-section">
-            <h4 style={{fontSize: '1.15rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Mis Cargos Adicionales</h4>
-            {tenantCharges.length > 0 ? (
-               <div className="table-container">
-                 <table className="users-table" style={{borderColor: 'var(--border-secondary, #dee2e6)'}}>
-                   <thead>
-                     <tr>
-                       <th style={{color: 'var(--text-secondary)'}}>Fecha Asignación</th>
-                       <th style={{color: 'var(--text-secondary)'}}>Concepto</th>
-                       <th style={{color: 'var(--text-secondary)'}}>Monto</th>
-                       <th style={{color: 'var(--text-secondary)'}}>Estado</th>
-                       <th style={{color: 'var(--text-secondary)'}}>Pagado con ID Trans.</th>
-                     </tr>
-                   </thead>
-                   <tbody>
-                    {tenantCharges.sort((a,b) => new Date(b.dateAssignedISO).getTime() - new Date(a.dateAssignedISO).getTime()).map((charge: ChargeRecord) => (
-                      <tr key={charge.id}>
-                        <td data-label="Fecha Asignación" style={{color: 'var(--text-primary)'}}>{charge.dateAssigned}</td>
-                        <td data-label="Concepto" style={{color: 'var(--text-primary)'}}>{charge.concept}</td>
-                        <td data-label="Monto" style={{color: 'var(--text-primary)'}}>${charge.amount.toFixed(2)}</td>
-                        <td data-label="Estado">
-                            <span className={`status-badge status-${charge.status === 'pending' ? 'warning' : 'success'}`}>
-                                {charge.status}
+                </thead>
+                <tbody>
+                {tenantViewHistory.length > 0 ? (
+                    tenantViewHistory.map((payment) => (
+                    <tr key={payment.id} style={{ borderBottom: '1px solid var(--border-secondary, #eee)'}}>
+                        <td style={{ padding: '0.75rem' }}>{payment.date}</td>
+                        <td style={{ padding: '0.75rem' }}>{payment.concept}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'right' }}>${payment.amount.toFixed(2)}</td>
+                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                            <span 
+                                className={`status-badge status-${payment.status}`}
+                                style={{
+                                    padding: '0.3rem 0.6rem',
+                                    borderRadius: '12px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '500',
+                                    color: '#fff',
+                                    // backgroundColor set by global CSS a .status-<statusname>
+                                }}
+                            >
+                                {payment.status === 'completed' ? 'Completado' : payment.status === 'reverted' ? 'Revertido' : 'Pendiente'}
                             </span>
                         </td>
-                        <td data-label="Pagado con ID Trans." style={{color: 'var(--text-primary)'}}>{charge.paymentId || 'N/A'}</td>
-                      </tr>
-                    ))}
-                   </tbody>
-                 </table>
-               </div>
-            ) : (
-                <p style={{color: 'var(--text-secondary)'}}>No tienes cargos adicionales registrados.</p>
-            )}
+                    </tr>
+                    ))
+                ) : (
+                    <tr>
+                    <td colSpan={4} style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay transacciones registradas.</td>
+                    </tr>
+                )}
+                </tbody>
+            </table>
         </div>
+        {!currentPaymentMonth && (
+             <div style={{marginTop: '1.5rem', padding: '1rem', textAlign: 'center', background: 'var(--accent-success-light, #e8f5e9)', borderRadius: '0.5rem', border: '1px solid var(--accent-success, #4caf50)'}}>
+                 <p style={{margin: 0, color: 'var(--accent-success-dark, #1b5e20)'}}>Próximo pago programado: <strong>Alquiler {displayNextScheduledPaymentMonthStr}</strong> (Vence el {displayNextScheduledPaymentDueDateStr})</p>
+             </div>
+        )}
       </section>
     </div>
   );

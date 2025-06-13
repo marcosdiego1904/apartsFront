@@ -1,185 +1,485 @@
-.maintenance-form-container {
-  background-color: #fff;
-  padding: 25px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 20px;
-}
+/* src/styles/MaintenanceRequestForm.css */
 
-.maintenance-form-container h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-  color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+/* Inherit global variables and styles where applicable */
+
+.maintenance-form-container {
+  padding: 2rem; /* Consistent with TenantPayments container padding */
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-primary, #f1f5f9); /* Use theme variable or fallback */
+  color: var(--text-primary, #1e293b);
+  max-width: 800px;
+  margin: 2rem auto;
+  border-radius: 1rem; /* Consistent with card styling */
+  box-shadow: var(--shadow-md, 0 6px 20px rgba(0,0,0,0.08));
+  border: 1px solid var(--border-primary, #e2e8f0);
 }
 
 .maintenance-form {
-  padding: 20px;
-  border-radius: 8px;
+  /* The container itself now has padding and background, form is for structure */
+}
+
+.maintenance-form-title {
+  text-align: center;
+  margin-bottom: 2.5rem; /* Increased margin */
+  font-size: 1.8rem; /* Consistent */
+  font-weight: 700;
+  color: var(--text-primary, #1e293b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 .maintenance-form .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 1.75rem; /* Increased spacing between form groups */
 }
 
-.maintenance-form .form-row {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-  align-items: flex-start;
-}
-
-.maintenance-form .form-row .form-group {
-  flex: 1;
-  min-width: 0;
-}
-
-.maintenance-form label {
+.maintenance-form .form-label,
+.maintenance-form .fieldset-legend {
   display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #c9d1d9;
-  font-size: 0.9rem;
+  margin-bottom: 0.75rem; /* Increased margin */
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-secondary, #334155);
 }
 
-.maintenance-form input[type="text"],
-.maintenance-form textarea,
-.maintenance-form select {
+.maintenance-form .form-input,
+.maintenance-form .form-textarea,
+.maintenance-form .form-select {
   width: 100%;
   padding: 12px 15px;
-  border: 1px solid #484f58;
-  border-radius: 6px;
-  background-color: #22272e;
-  color: #c9d1d9;
+  border: 1px solid var(--border-secondary, #cbd5e1);
+  background-color: var(--bg-tertiary, #fff); /* Input background from theme */
+  color: var(--text-primary, #000);
+  border-radius: 0.75rem; /* Softer radius like other inputs */
   font-size: 1rem;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.maintenance-form input[type="text"]:focus,
-.maintenance-form textarea:focus,
-.maintenance-form select:focus {
-  border-color: #58a6ff;
+.maintenance-form .form-input:focus,
+.maintenance-form .form-textarea:focus,
+.maintenance-form .form-select:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+  border-color: var(--accent-primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); /* Use accent color for focus */
 }
 
-.maintenance-form textarea {
-  min-height: 100px;
+.maintenance-form .form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23A1A1AA' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E"); /* Use text-secondary for arrow */
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.25em;
+}
+
+.maintenance-form .form-textarea {
+  min-height: 120px;
   resize: vertical;
 }
 
-.maintenance-form .required-asterisk {
-  color: #e74c3c;
-  margin-left: 2px;
+.maintenance-form .fieldset-container {
+  border: none;
+  padding: 0;
+  margin: 0 0 1.75rem 0;
 }
 
-.maintenance-form .permission-group {
-  margin-top: 25px;
-  margin-bottom: 25px;
+.maintenance-form .radio-group {
+  display: flex; /* Align radio buttons horizontally */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  gap: 1rem; /* Space between radio options */
+  margin-top: 0.5rem;
 }
 
-.maintenance-form .checkbox-label {
+.maintenance-form .radio-label {
+  display: flex; /* Align input and text */
+  align-items: center;
+  margin-right: 15px;
+  font-weight: normal;
+  font-size: 0.95rem; /* Slightly smaller */
+  color: var(--text-secondary, #334155);
+  cursor: pointer;
+}
+
+.maintenance-form .radio-input {
+  margin-right: 8px; /* Space between radio and text */
+  cursor: pointer;
+  transform: scale(1.1);
+  accent-color: var(--accent-primary, #3b82f6); /* Style the radio button itself */
+}
+
+.maintenance-form .file-input-description {
+  display: block;
+  margin-top: 0.5rem; /* Changed from -10px to give some space */
+  margin-bottom: 0; /* The parent form-group handles bottom margin */
+  font-size: 0.85rem;
+  color: var(--text-tertiary, #64748b);
+}
+
+.maintenance-form .submit-button {
+  /* Use global .btn and .btn-primary styles if they exist and fit */
+  /* Otherwise, define styles similar to TenantPayments button */
+  background-color: var(--accent-primary, #3b82f6);
+  color: white;
+  padding: 14px 25px;
+  border: none;
+  border-radius: 0.75rem; /* Consistent radius */
+  font-size: 1.05rem; /* Slightly adjusted */
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.maintenance-form .submit-button:hover {
+  background-color: var(--accent-primary-darker, #2563eb); /* Example for darker hover */
+  transform: translateY(-1px);
+}
+
+.maintenance-form .submit-button:active {
+  transform: translateY(0px);
+}
+
+/* Add a specific style for the file input to match others */
+.maintenance-form .form-input[type="file"] {
+    padding: 10px 15px; /* Adjust padding for file input for better look */
+}
+
+/* Responsive adjustments if necessary */
+@media (max-width: 768px) {
+  .maintenance-form-container {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+  .maintenance-form-title {
+    font-size: 1.5rem;
+  }
+  .maintenance-form .radio-group {
+    flex-direction: column; /* Stack radio buttons vertically on small screens */
+    gap: 0.75rem;
+  }
+}
+
+/* Styles for the Existing Requests List Section */
+.request-list-section {
+  max-width: 800px; /* Match form container width */
+  margin: 2.5rem auto; /* Spacing from the form or other content */
+  padding: 2rem;
+  background-color: var(--bg-secondary, #f9fafb); /* Slightly different background or same as form container */
+  color: var(--text-primary, #1e293b);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.07));
+  border: 1px solid var(--border-primary, #e2e8f0);
+}
+
+.request-list-title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.6rem; /* Slightly smaller than form title */
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #8b949e;
-  font-size: 0.875rem;
-  font-weight: normal;
-  cursor: pointer;
+  justify-content: center;
+  gap: 0.6rem;
 }
 
-.maintenance-form .checkbox-label input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  width: 16px;
-  height: 16px;
-  border: 1.5px solid #636e7b;
-  border-radius: 3px;
-  background-color: transparent;
-  cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  vertical-align: middle;
+.request-list {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column for now, can be changed to multiple */
+  gap: 1.5rem;
 }
 
-.maintenance-form .checkbox-label input[type="checkbox"]:checked {
-  background-color: #58a6ff;
-  border-color: #58a6ff;
+.request-item-card {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-secondary, #e5e7eb);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.05));
+  transition: all 0.2s ease-in-out;
 }
 
-.maintenance-form .checkbox-label input[type="checkbox"]:checked::before {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 5px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
+.request-item-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md, 0 5px 15px rgba(0,0,0,0.08));
 }
 
-.maintenance-form .checkbox-label .checkbox-label-text {
-  line-height: 1.4;
+.request-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px dashed var(--border-primary, #eee);
 }
 
-.maintenance-form small {
-  display: block;
-  margin-top: 8px;
-  font-size: 0.8rem;
-  color: #8b949e;
+.request-item-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  margin: 0;
+  flex: 1;
 }
 
-.maintenance-form .action-btn {
-  width: 100%;
-  padding: 12px 15px;
-  font-size: 1rem;
+.request-item-status {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px; /* Pill shape */
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+/* Specific Status Badge Colors (using theme variables where possible) */
+.status-badge-sent {
+  background-color: var(--accent-info-light, #e0f2fe); /* Light blue */
+  color: var(--accent-info, #0ea5e9);
+  border-color: var(--accent-info, #0ea5e9);
+}
+
+.status-badge-in-progress {
+  background-color: var(--accent-warning-light, #fffbeb); /* Light yellow */
+  color: var(--accent-warning, #f59e0b);
+  border-color: var(--accent-warning, #f59e0b);
+}
+
+.status-badge-completed {
+  background-color: var(--accent-success-light, #d1fae5); /* Adjusted: Tailwind green-200 as a richer light green */
+  color: var(--accent-success-darker, #047857);          /* Adjusted: Tailwind green-800 for darker text */
+  border-color: var(--accent-success-darker, #047857);    /* Adjusted: Matching darker border */
+}
+
+.status-badge-cancelled {
+  background-color: var(--bg-tertiary, #f3f4f6); /* Light gray */
+  color: var(--text-tertiary, #6b7280);
+  border-color: var(--border-secondary, #d1d5db);
+}
+
+.request-item-body p {
+  margin-bottom: 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #374151);
+  line-height: 1.6;
+}
+
+.request-item-body p strong {
+  color: var(--text-primary, #1f2937);
   font-weight: 500;
 }
 
-.maintenance-form .submit-btn {
-  background-color: #4a90e2;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 6px;
+.request-item-description {
+  /* max-height: 60px; */ /* Example: Limit height */
+  /* overflow: hidden; */
+  /* text-overflow: ellipsis; */
+  /* display: -webkit-box; */
+  /* -webkit-line-clamp: 2; */ /* Limit to 2 lines */
+  /* -webkit-box-orient: vertical; */
+  font-size: 0.875rem !important; /* Ensure description text size */
+  color: var(--text-tertiary, #4b5563) !important;
+}
+
+.no-requests-message {
+  text-align: center;
+  padding: 2rem;
   font-size: 1rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+/* --- Rating System Styles --- */
+.request-rating-area {
+  margin-top: 1.25rem; /* Space from description */
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-primary, #e5e7eb); /* Softer separator */
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem; /* Space between elements in rating area */
+}
+
+.rating-area-title {
+  font-size: 1rem; /* Slightly smaller than card title */
   font-weight: 600;
+  color: var(--text-primary, #1f2937);
+  margin: 0 0 0.25rem 0;
+}
+
+.star-rating-input {
+  display: flex;
+  gap: 0.25rem; /* Small gap between stars */
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  font-size: 1.8rem; /* Larger stars */
+  color: var(--text-tertiary, #d1d5db); /* Default empty star color (light gray) */
   cursor: pointer;
-  transition: background-color 0.2s ease-in-out;
-  display: inline-block;
+  transition: color 0.2s ease-in-out, transform 0.15s ease-in-out;
 }
 
-.maintenance-form .submit-btn:hover {
-  background-color: #357abd;
+.star-btn:hover {
+  color: var(--accent-warning-light, #fcd34d); /* Lighter yellow for hover on empty star */
+  transform: scale(1.15);
 }
 
+.star-btn.selected,
+.star-btn.selected:hover /* Keep selected color even on hover */
+ {
+  color: var(--accent-warning, #f59e0b); /* Full yellow for selected star */
+  transform: scale(1.1); /* Slight grow when selected */
+}
+
+.rating-comment-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-secondary, #d1d5db);
+  border-radius: 0.5rem; /* Consistent with other inputs */
+  font-size: 0.95rem;
+  color: var(--text-primary, #1f2937);
+  background-color: var(--bg-tertiary, #f9fafb); /* Slightly off-white background */
+  resize: vertical;
+  min-height: 60px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rating-comment-input::placeholder {
+  color: var(--text-tertiary, #9ca3af);
+}
+
+.rating-comment-input:focus {
+  outline: none;
+  border-color: var(--accent-primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  background-color: var(--bg-card, #ffffff); /* White background on focus */
+}
+
+.submit-rating-button {
+  align-self: flex-start; /* Align to the left, or use flex-end for right */
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  background-color: var(--accent-success, #10b981); /* Green for submit */
+  color: white;
+  border: 1px solid var(--accent-success, #10b981);
+}
+
+.submit-rating-button:hover:not(:disabled) {
+  background-color: var(--accent-success-darker, #059669);
+  border-color: var(--accent-success-darker, #059669);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.submit-rating-button:disabled {
+  background-color: var(--bg-tertiary, #e5e7eb);
+  color: var(--text-tertiary, #9ca3af);
+  border-color: var(--border-secondary, #d1d5db);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.rating-submitted-message {
+  margin-top: 1.25rem;
+  padding: 0.875rem 1.25rem;
+  background-color: var(--accent-success-light, #f0fdf4);
+  color: var(--accent-success-darker, #065f46);
+  border: 1px solid var(--accent-success, #10b981);
+  border-radius: 0.5rem;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.rating-submitted-message p {
+  margin: 0;
+}
+
+/* --- Pagination Controls --- */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.6rem; /* Slightly more gap for better separation */
+  margin-top: 2.5rem; /* More space from the list */
+  padding: 0.5rem; /* Padding around the controls for better spacing on small screens */
+  flex-wrap: wrap; /* Allow controls to wrap on smaller screens */
+}
+
+.pagination-btn {
+  background-color: var(--bg-card, #ffffff);
+  color: var(--accent-primary, #3b82f6);
+  border: 1px solid var(--border-secondary, #e0e0e0); /* Default border color */
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.1rem; /* Slightly more padding */
+  font-size: 0.9rem; /* Slightly smaller font for page numbers */
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  min-width: 40px; /* Ensure even small page numbers have decent width */
+  text-align: center;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: var(--accent-primary-light, #e0f2fe); /* Lighter background on hover */
+  color: var(--accent-primary, #3b82f6);
+  border-color: var(--accent-primary, #3b82f6); /* Accent border on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+}
+
+.pagination-btn.active {
+  background-color: var(--accent-primary, #3b82f6);
+  color: white;
+  border-color: var(--accent-primary, #3b82f6);
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(59,130,246,0.2);
+  transform: translateY(0); /* No lift for active button, or very slight */
+}
+
+.pagination-btn:disabled {
+  background-color: var(--bg-tertiary, #f3f4f6);
+  color: var(--text-tertiary, #a1a1aa);
+  border-color: var(--border-primary, #e5e7eb);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Responsive for request list & rating & pagination */
 @media (max-width: 768px) {
-  .maintenance-form .form-row {
+  .request-list-section {
+    margin: 1.5rem 1rem;
+    padding: 1.5rem;
+  }
+  .request-list-title {
+    font-size: 1.4rem;
+  }
+  .request-item-header {
     flex-direction: column;
-    gap: 0;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
-  .maintenance-form .form-row .form-group {
-    margin-bottom: 20px;
+  .request-item-status {
+    align-self: flex-start; /* Align status badge to start when stacked */
   }
-  .maintenance-form .form-row .form-group:last-child {
-    margin-bottom: 0;
+  .star-btn {
+    font-size: 1.6rem; /* Slightly smaller stars on mobile */
   }
-}
-
-.maintenance-form ::placeholder {
-  color: #6e7681;
-  opacity: 1;
-}
-
-.maintenance-form :-ms-input-placeholder {
-  color: #6e7681;
-}
-
-.maintenance-form ::-ms-input-placeholder {
-  color: #6e7681;
+  .submit-rating-button {
+    width: 100%; /* Full width button on mobile */
+    text-align: center;
+  }
+  .pagination-controls {
+    gap: 0.4rem;
+    margin-top: 2rem;
+  }
+  .pagination-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    min-width: 35px;
+  }
 } 

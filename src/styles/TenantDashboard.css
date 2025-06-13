@@ -1,0 +1,174 @@
+/* src/styles/TenantDashboard.css */
+
+.dashboard-content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.dashboard-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.07);
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151; /* --color-text-primary */
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb; /* --color-border */
+  padding-bottom: 0.75rem;
+}
+
+/* Payment Card Specifics */
+.payment-card-summary .payment-amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #10B981; /* A shade of green for positive financial info */
+  margin-bottom: 0.5rem;
+}
+
+.payment-card-summary .payment-due-date {
+  font-size: 0.9rem;
+  color: #6B7280; /* --color-text-secondary */
+  margin-bottom: 1.5rem;
+}
+
+/* Generic Card Button */
+.card-button {
+  background-color: #3B82F6; /* --color-primary */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  margin-top: auto; /* Pushes button to the bottom */
+}
+
+.card-button:hover {
+  background-color: #2563EB; /* --color-primary-dark */
+}
+
+/* Maintenance and Charges Lists */
+.maintenance-summary ul,
+.charges-summary ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.maintenance-summary li,
+.charges-summary li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0;
+  font-size: 0.95rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.maintenance-summary li:last-child,
+.charges-summary li:last-child {
+  border-bottom: none;
+}
+
+.maintenance-summary .status-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Status Badge Colors */
+.status-badge.status-sent { background-color: #dbeafe; color: #3b82f6; }
+.status-badge.status-in-progress { background-color: #fef3c7; color: #d97706; }
+.status-badge.status-completed { background-color: #d1fae5; color: #059669; }
+.status-badge.status-cancelled { background-color: #fee2e2; color: #dc2626; }
+
+
+.charges-summary .charge-amount {
+  font-weight: 600;
+  color: #4B5563;
+}
+
+/* Quick Actions - Updated */
+.quick-actions-summary {
+    justify-content: center; /* Center the content vertically if space allows */
+}
+
+.quick-actions-container {
+    display: flex;
+    justify-content: space-around; /* Space out the buttons */
+    align-items: center;
+    width: 100%;
+    margin-top: 1rem;
+    flex-grow: 1;
+}
+
+.quick-actions-summary .action-button {
+    display: flex;
+    flex-direction: column; /* Icon on top, text below */
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: none;
+    color: #4B5563; /* --color-text-secondary */
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background-color 0.2s, color 0.2s;
+    cursor: pointer;
+    width: 120px; /* Give a fixed width */
+    height: 100px; /* Give a fixed height */
+}
+
+.quick-actions-summary .action-button:hover {
+    background-color: #F9FAFB; /* A very light grey on hover */
+    color: #3B82F6; /* --color-primary */
+}
+
+.quick-actions-summary .action-button svg {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 0.5rem; /* Space between icon and text */
+}
+
+.quick-actions-summary .action-button span {
+    text-align: center;
+}
+
+/* New styles for Maintenance Request items */
+.request-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Aligns items to the left */
+}
+
+.request-title {
+    font-weight: 500;
+    color: #374151; /* --color-text-primary */
+    margin-bottom: 0.2rem; /* Small space between title and date */
+}
+
+.request-date {
+    font-size: 0.8rem;
+    color: #6B7280; /* --color-text-secondary */
+} 

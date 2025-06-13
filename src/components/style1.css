@@ -1,8 +1,8 @@
-/* Estilos para el componente UserList - Añadir a style1.css */
+/* Estilos para el componente UserList - REVISAR Y REFACTORIZAR */
 
 /* Contenedor principal */
 .user-management-container {
-  padding: 20px;
+  padding: var(--spacing-large, 24px); /* Usar variable de espaciado */
   width: 100%;
 }
 
@@ -10,234 +10,275 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: var(--spacing-xlarge, 30px); /* Usar variable */
 }
 
-/* Botón para añadir usuarios */
-.add-user-btn {
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  display: flex;
-  align-items: center;
-}
+/* Botón para añadir usuarios - USAR CLASES GLOBALES: .btn .btn-primary */
+/* .add-user-btn { ... } ELIMINADO */
 
-.add-user-btn:hover {
-  background-color: #1565c0;
-  transform: translateY(-2px);
-}
+/* Tabla de usuarios - USAR CLASE GLOBAL: .table-container y .table */
+/* .users-table-container { ... } ELIMINADO - Usar .table-container */
+/* .users-table { ... } ELIMINADO - Usar .table */
+/* .users-table th, .users-table td { ... } ELIMINADO */
+/* .users-table th { ... } ELIMINADO */
+/* .users-table tr:hover { ... } ELIMINADO */
+/* .users-table tr:last-child td { ... } ELIMINADO */
 
-.add-user-btn:active {
-  transform: translateY(0);
-}
+/* Estilo para el badge de estado - USAR CLASES GLOBALES: .badge .badge-success, .badge-error, etc. */
+/* .status-badge { ... } ELIMINADO */
+/* .status-badge.active { ... } ELIMINADO */
+/* .status-badge.inactive { ... } ELIMINADO */
+/* .status-badge:hover { ... } ELIMINADO */
+/* .status-badge.active:hover { ... } ELIMINADO */
+/* .status-badge.inactive:hover { ... } ELIMINADO */
 
-/* Tabla de usuarios */
-.users-table-container {
-  overflow-x: auto;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.users-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.users-table th,
-.users-table td {
-  padding: 15px;
-  text-align: left;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.users-table th {
-  background-color: #f5f7fa;
-  color: #333;
-  font-weight: 600;
-}
-
-.users-table tr:hover {
-  background-color: #f9f9f9;
-}
-
-.users-table tr:last-child td {
-  border-bottom: none;
-}
-
-/* Estilo para el badge de estado */
-.status-badge {
-  display: inline-block;
-  padding: 6px 12px;
-  border-radius: 50px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.status-badge.active {
-  background-color: #e3f2fd;
-  color: #1976d2;
-  border: 1px solid #bbdefb;
-}
-
-.status-badge.inactive {
-  background-color: #ffebee;
-  color: #d32f2f;
-  border: 1px solid #ffcdd2;
-}
-
-.status-badge:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.status-badge.active:hover {
-  background-color: #bbdefb;
-}
-
-.status-badge.inactive:hover {
-  background-color: #ffcdd2;
-}
-
-/* Botones de acción */
-.edit-btn {
-  background-color: #f5f7fa;
-  color: #333;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.edit-btn:hover {
-  background-color: #e0e0e0;
-}
+/* Botones de acción - USAR CLASES GLOBALES: .btn .btn-outline-secondary o .btn-icon */
+/* .edit-btn { ... } ELIMINADO */
 
 /* Formulario de usuarios */
 .user-form-container {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  padding: 25px;
-  margin-bottom: 30px;
+  background-color: var(--color-background-container, #ffffff);
+  border-radius: var(--border-radius-lg, 8px);
+  box-shadow: var(--shadow-md, 0 2px 8px rgba(0,0,0,0.1));
+  padding: var(--spacing-xlarge, 25px); /* Usar variable */
+  margin-bottom: var(--spacing-xlarge, 30px);
 }
 
 .user-form-container h3 {
-  margin-bottom: 20px;
-  color: #333;
+  margin-bottom: var(--spacing-large, 20px);
+  color: var(--color-text-primary, #333);
   font-weight: 600;
+  font-size: 1.25em; /* Ajustar según jerarquía */
 }
 
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #555;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 10px 15px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.2s ease;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #1976d2;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
-}
+/* Estilos de Formulario - USAR CLASES GLOBALES .form-group, .form-label, .form-input, .form-select */
+/* .form-group { ... } ELIMINADO */
+/* .form-group label { ... } ELIMINADO */
+/* .form-group input, .form-group select { ... } ELIMINADO */
+/* .form-group input:focus, .form-group select:focus { ... } ELIMINADO */
 
 .form-buttons {
   display: flex;
-  gap: 15px;
-  margin-top: 25px;
+  gap: var(--spacing-medium, 15px); /* Usar variable */
+  margin-top: var(--spacing-large, 25px);
 }
 
-.submit-btn {
-  background-color: #1976d2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
+/* Botones de formulario - USAR CLASES GLOBALES: .btn .btn-primary, .btn .btn-outline-secondary */
+/* .submit-btn { ... } ELIMINADO */
+/* .cancel-btn { ... } ELIMINADO */
 
-.submit-btn:hover {
-  background-color: #1565c0;
-}
-
-.cancel-btn {
-  background-color: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 10px 20px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.cancel-btn:hover {
-  background-color: #e0e0e0;
-}
-
-.error-message {
-  background-color: #ffebee;
-  color: #d32f2f;
-  padding: 15px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  font-weight: 500;
-}
+/* Mensaje de Error - USAR CLASES GLOBALES: .alert .alert-error */
+/* .error-message { ... } ELIMINADO */ 
 
 .loading-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 300px;
+  padding: var(--spacing-large, 20px);
 }
 
-/* Responsive */
+/* Responsive - REVISAR si es necesario después de aplicar estilos globales */
 @media (max-width: 768px) {
   .user-management-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 15px;
+    gap: var(--spacing-medium, 15px);
   }
   
+  /* Si los botones globales ya son full-width en móvil o se adaptan bien, esto podría no ser necesario 
   .add-user-btn {
     width: 100%;
     justify-content: center;
-  }
+  } */
   
   .form-buttons {
     flex-direction: column;
   }
   
+  /* Si los botones globales ya son full-width en móvil o se adaptan bien, esto podría no ser necesario
   .submit-btn, .cancel-btn {
     width: 100%;
-  }
+  } */
 }
+
+/* === Global Dashboard Styles === */
+
+:root {
+  --primary-color: #4a90e2; /* A vibrant blue */
+  --secondary-color: #50e3c2; /* A fresh teal */
+  --text-color-dark: #2c3e50; /* A deep slate blue */
+  --text-color-light: #95a5a6; /* A soft grey */
+  --background-color: #f8f9fa; /* A very light grey */
+  --card-background-color: #ffffff;
+  --card-border-radius: 12px;
+  --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.12);
+  --green: #2ecc71;
+  --orange: #f39c12;
+  --red: #e74c3c;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body, .dashboard-container {
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+}
+
+
+/* === Grid Layout for Cards === */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  padding: 1.5rem;
+}
+
+
+/* === General Card Styling === */
+.dashboard-card {
+  background-color: var(--card-background-color);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  overflow: hidden; /* Ensures content respects border radius */
+  border: 1px solid #e9ecef;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+
+/* === Card Header === */
+.card-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color-dark);
+}
+
+
+/* === Card Content === */
+.card-content {
+  padding: 1.5rem;
+  flex-grow: 1; /* Allows content to fill space */
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* === Card Footer === */
+.card-footer {
+  padding: 1rem 1.5rem;
+  text-align: right;
+  border-top: 1px solid #e9ecef;
+}
+
+.card-footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.card-footer a:hover {
+  color: #357abd; /* Darker blue on hover */
+}
+
+
+/* === New Redesigned Card Component === */
+.stat-card {
+  background-color: var(--card-background-color);
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  padding: 1.5rem;
+  gap: 1.5rem;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.stat-card-icon {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+}
+
+.stat-card-info {
+    flex-grow: 1;
+}
+
+.stat-card-title {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-color-light);
+}
+
+.stat-card-value {
+    margin: 0;
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-color-dark);
+}
+
+.stat-card-details {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-color-light);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+.stat-card-details span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-card-footer {
+  margin-top: 1.5rem;
+  text-align: right;
+}
+
+.stat-card-footer a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+/* Icon-specific colors */
+.icon-units { background-color: var(--primary-color); }
+.icon-payments { background-color: var(--secondary-color); }
+.icon-maintenance { background-color: var(--orange); }
+.icon-users { background-color: var(--red); }
+
+/* Utility classes for colors */
+.text-green { color: var(--green); }
+.text-orange { color: var(--orange); }
+.text-red { color: var(--red); }
+.text-light { color: var(--text-color-light); }
+.font-bold { font-weight: 600; }

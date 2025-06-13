@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 // No necesitamos useAuth aquí si este componente solo es para managers y el enrutamiento ya lo maneja.
 // import { useAuth } from '../context/AuthContext'; 
 import type { User } from '../types'; // UserRole no es necesario aquí directamente
@@ -40,16 +40,16 @@ interface TenantInfo {
 const getUniqueTenants = (payments: PaymentRecord[], charges: ChargeRecord[]): TenantInfo[] => {
   const uniqueTenantsMap = new Map<string, string>();
   payments.forEach(payment => {
-    if (!uniqueTenantsMap.has(payment.tenantId)) {
+    if (payment.tenantId && !uniqueTenantsMap.has(payment.tenantId)) {
       uniqueTenantsMap.set(payment.tenantId, payment.tenantName);
     }
   });
   charges.forEach(charge => {
-    if (!uniqueTenantsMap.has(charge.tenantId)) {
+    if (charge.tenantId && !uniqueTenantsMap.has(charge.tenantId)) {
       uniqueTenantsMap.set(charge.tenantId, charge.tenantName);
     }
   });
-  return Array.from(uniqueTenantsMap, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  return Array.from(uniqueTenantsMap, ([id, name]) => ({ id, name })).sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 };
 
 const ManagerPayments: React.FC = () => {
@@ -62,11 +62,19 @@ const ManagerPayments: React.FC = () => {
   const [chargeAmount, setChargeAmount] = useState<string>(''); // Usar string para el input
   const [chargeConcept, setChargeConcept] = useState<string>('');
   const [feedbackMessage, setFeedbackMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Estado de carga general
 
   const uniqueTenants = getUniqueTenants(allPaymentsHistory, allChargesHistory);
 
+  const displayFeedback = useCallback((type: 'success' | 'error', text: string) => {
+    setFeedbackMessage({ type, text });
+    const timer = setTimeout(() => setFeedbackMessage(null), 4000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Cargar todo el historial de pagos y cargos.
   useEffect(() => {
+    setIsLoading(true);
     console.log("[ManagerPayments-LoadEffect] Attempting to load all payment history...");
     const storedPaymentHistory = localStorage.getItem(LOCAL_STORAGE_PAYMENT_HISTORY_KEY);
     if (storedPaymentHistory) {
@@ -82,6 +90,7 @@ const ManagerPayments: React.FC = () => {
       } catch (error) {
         console.error("[ManagerPayments-LoadEffect] Failed to parse stored payment history:", error);
         setAllPaymentsHistory([]);
+        displayFeedback('error', 'Error al cargar el historial de pagos.');
       }
     } else {
         console.log("[ManagerPayments-LoadEffect] No payment history found in localStorage.");
@@ -103,17 +112,14 @@ const ManagerPayments: React.FC = () => {
       } catch (error) {
         console.error("[ManagerPayments-LoadEffect] Failed to parse stored charges history:", error);
         setAllChargesHistory([]);
+        displayFeedback('error', 'Error al cargar el historial de cargos.');
       }
     } else {
       console.log("[ManagerPayments-LoadEffect] No charges history found in localStorage.");
       setAllChargesHistory([]);
     }
-  }, []);
-
-  const displayFeedback = (type: 'success' | 'error', text: string) => {
-    setFeedbackMessage({ type, text });
-    setTimeout(() => setFeedbackMessage(null), 4000);
-  };
+    setIsLoading(false);
+  }, [displayFeedback]);
 
   const handleRevertPayment = (paymentId: string) => {
     console.log(`[ManagerPayments] Attempting to revert payment with id: ${paymentId}`);
@@ -155,7 +161,7 @@ const ManagerPayments: React.FC = () => {
     event.preventDefault();
     setFeedbackMessage(null);
 
-    if (!selectedTenantId || !chargeAmount || !chargeConcept) {
+    if (!selectedTenantId || !chargeAmount || !chargeConcept.trim()) {
       displayFeedback('error', "Todos los campos para asignar cargo son obligatorios.");
       return;
     }
@@ -174,11 +180,11 @@ const ManagerPayments: React.FC = () => {
 
     const currentDate = new Date();
     const newCharge: ChargeRecord = {
-      id: `charge-${currentDate.toISOString()}-${Math.random().toString(36).substr(2, 9)}`, // ID más único
+      id: `charge-${currentDate.toISOString()}-${Math.random().toString(36).substr(2, 9)}`,
       tenantId: selectedTenantId,
       tenantName: tenant.name,
       amount,
-      concept: chargeConcept,
+      concept: chargeConcept.trim(),
       dateAssigned: currentDate.toLocaleDateString('es-ES'),
       dateAssignedISO: currentDate.toISOString(),
       status: 'pending',
@@ -188,9 +194,8 @@ const ManagerPayments: React.FC = () => {
       const currentCharges = JSON.parse(localStorage.getItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY) || '[]') as ChargeRecord[];
       const updatedCharges = [newCharge, ...currentCharges];
       localStorage.setItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY, JSON.stringify(updatedCharges));
-      setAllChargesHistory(updatedCharges); // Actualizar estado para UI si mostramos tabla de cargos
+      setAllChargesHistory(updatedCharges);
       displayFeedback('success', `Cargo de $${amount.toFixed(2)} por "${chargeConcept}" asignado a ${tenant.name}.`);
-      // Reset form
       setSelectedTenantId('');
       setChargeAmount('');
       setChargeConcept('');
@@ -211,7 +216,6 @@ const ManagerPayments: React.FC = () => {
         return charge;
       });
 
-      // Check if any charge was actually updated to avoid unnecessary localStorage write
       if (JSON.stringify(updatedCharges) !== JSON.stringify(allChargesHistory)) {
         setAllChargesHistory(updatedCharges);
         localStorage.setItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY, JSON.stringify(updatedCharges));
@@ -249,6 +253,12 @@ const ManagerPayments: React.FC = () => {
 
   const totalRecaudado = allPaymentsHistory.reduce((acc, payment) => 
     payment.status === 'completed' ? acc + payment.amount : acc, 0);
+  const totalPendienteDeCargos = allChargesHistory.reduce((acc, charge) => 
+    charge.status === 'pending' ? acc + charge.amount : acc, 0);
+
+  if (isLoading) {
+    return <div className="loading-container"><p>Cargando datos de pagos...</p></div>;
+  }
 
   const cardStyle: React.CSSProperties = {
     backgroundColor: 'var(--bg-secondary, #13131a)',
@@ -282,213 +292,248 @@ const ManagerPayments: React.FC = () => {
   };
 
   return (
-    <div className="manager-payments-view-container" style={{ padding: '2rem' }}>
-      <h2 style={{ textAlign: 'center', color: 'var(--text-primary)', marginBottom: '2.5rem', fontSize: '1.8rem' }}>
-        🛡️ Gestión de Pagos (Admin)
-      </h2>
+    <div className="manager-payments-container" style={{ padding: 'var(--spacing-lg)' }}>
+      <h2 className="page-title">Gestión de Pagos y Cargos</h2>
 
+      {/* Mensaje de Feedback Global */}
       {feedbackMessage && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          padding: '1rem 1.5rem',
-          borderRadius: '0.5rem',
-          backgroundColor: feedbackMessage.type === 'success' ? 'var(--accent-success)' : 'var(--accent-danger)',
-          color: 'var(--text-primary)',
-          boxShadow: 'var(--shadow-lg)',
-          zIndex: 1000,
-          textAlign: 'center',
-          minWidth: '300px',
-        }}>
+        <div 
+          className={`alert ${feedbackMessage.type === 'success' ? 'alert-success' : 'alert-error'} toast-notification-custom`} 
+          role="alert"
+          style={{ position: 'fixed', top: 'var(--spacing-lg)', right: 'var(--spacing-lg)', zIndex: 1050, boxShadow: 'var(--shadow-lg)' }}
+        >
           {feedbackMessage.text}
+          <button 
+            onClick={() => setFeedbackMessage(null)} 
+            className="modal-close-btn" 
+            style={{ fontSize: '1.2rem', padding: '0.2rem 0.5rem', marginLeft: '15px' }}
+          >&times;</button>
         </div>
       )}
 
-      {/* Card 1: Summary */}
-      <section style={cardStyle}>
-        <h3 style={cardTitleStyle}>Resumen General</h3>
-        <p style={{color: 'var(--text-secondary)'}}><strong style={{color: 'var(--text-primary)'}}>Total Recaudado (Pagos Completados):</strong>
-          <span style={{color: 'var(--accent-success)', fontWeight: 'bold', marginLeft: '0.5rem'}}>${totalRecaudado.toFixed(2)}</span>
-        </p>
-        <p style={{color: 'var(--text-secondary)', marginTop: '0.5rem'}}><strong style={{color: 'var(--text-primary)'}}>Total de Transacciones de Pago Registradas:</strong> {allPaymentsHistory.length}</p>
-        <p style={{color: 'var(--text-secondary)', marginTop: '0.5rem'}}><strong style={{color: 'var(--text-primary)'}}>Total de Cargos Adicionales Registrados:</strong> {allChargesHistory.length}</p>
-      </section>
-
-      {/* Card 2: Assign Charge */}
-      <section style={cardStyle}>
-        <h3 style={cardTitleStyle}>Asignar Cargo Adicional</h3>
-        <form onSubmit={handleAssignCharge} className="assign-charge-form">
-          <div className="form-group" style={{ marginBottom: '1rem' }}>
-            <label htmlFor="tenantSelect" style={labelStyle}>Seleccionar Inquilino:</label>
-            <select
-              id="tenantSelect"
-              value={selectedTenantId}
-              onChange={(e) => setSelectedTenantId(e.target.value)}
-              className="form-input" // Keep existing class for potential global styles
-              style={inputStyle} // Apply dark theme specific styles
-              required
-            >
-              <option value="" style={{backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-secondary)'}}>-- Seleccione un inquilino --</option>
-              {uniqueTenants.map(tenant => (
-                <option key={tenant.id} value={tenant.id} style={{backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)'}}>
-                  {tenant.name} (ID: {tenant.id})
-                </option>
-              ))}
-            </select>
+      {/* Sección de Sumarios en Tarjetas */}
+      <div className="dashboard-grid" style={{ marginBottom: 'var(--spacing-xl)' }}>
+        <div className="dashboard-card">
+          <div className="card-content">
+            <h4>Total Recaudado (Pagos Completados)</h4>
+            <p className="text-lg font-semibold">${totalRecaudado.toFixed(2)}</p>
           </div>
-          <div className="form-grid form-grid-cols-2" style={{gap: '1rem'}}>
-            <div className="form-group">
-              <label htmlFor="chargeAmount" style={labelStyle}>Monto del Cargo ($):</label>
-              <input
-                type="number"
-                id="chargeAmount"
-                value={chargeAmount}
-                onChange={(e) => setChargeAmount(e.target.value)}
-                className="form-input"
-                style={inputStyle}
-                placeholder="Ej: 50.25"
-                step="0.01"
-                min="0.01"
-                required
-              />
+        </div>
+        <div className="dashboard-card">
+          <div className="card-content">
+            <h4>Total Pendiente (Cargos por Pagar)</h4>
+            <p className="text-lg font-semibold">${totalPendienteDeCargos.toFixed(2)}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Formulario para Asignar Cargos Adicionales */}
+      <div className="dashboard-card" style={{ marginBottom: 'var(--spacing-xl)' }}>
+        <div className="card-header">
+          <h3 className="card-title">Asignar Nuevo Cargo Adicional</h3>
+        </div>
+        <div className="card-content">
+          <form onSubmit={handleAssignCharge} className="form-needs-validation" noValidate>
+            <div className="form-grid form-grid-cols-3">
+              <div className="form-group">
+                <label htmlFor="tenantSelect" className="form-label">Inquilino:</label>
+                <select 
+                  id="tenantSelect" 
+                  value={selectedTenantId} 
+                  onChange={(e) => setSelectedTenantId(e.target.value)} 
+                  className="form-select"
+                  required
+                >
+                  <option value="">Seleccione un inquilino</option>
+                  {uniqueTenants.map(tenant => (
+                    <option key={tenant.id} value={tenant.id}>{tenant.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label htmlFor="chargeAmount" className="form-label">Monto del Cargo ($):</label>
+                <input 
+                  type="number" 
+                  id="chargeAmount" 
+                  value={chargeAmount} 
+                  onChange={(e) => setChargeAmount(e.target.value)} 
+                  className="form-input" 
+                  placeholder="Ej: 50.00"
+                  min="0.01" 
+                  step="0.01"
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="chargeConcept" className="form-label">Concepto del Cargo:</label>
+                <input 
+                  type="text" 
+                  id="chargeConcept" 
+                  value={chargeConcept} 
+                  onChange={(e) => setChargeConcept(e.target.value)} 
+                  className="form-input" 
+                  placeholder="Ej: Reparación de ventana"
+                  required 
+                />
+              </div>
             </div>
-            <div className="form-group">
-              <label htmlFor="chargeConcept" style={labelStyle}>Concepto del Cargo:</label>
-              <input
-                type="text"
-                id="chargeConcept"
-                value={chargeConcept}
-                onChange={(e) => setChargeConcept(e.target.value)}
-                className="form-input"
-                style={inputStyle}
-                placeholder="Ej: Reparación ventana"
-                required
-              />
+            <div className="form-buttons" style={{ marginTop: 'var(--spacing-md)' }}>
+              <button type="submit" className="btn btn-primary">Asignar Cargo</button>
             </div>
-          </div>
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '1.5rem', backgroundColor: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}>
-            Asignar Cargo
-          </button>
-        </form>
-      </section>
+          </form>
+        </div>
+      </div>
 
-      {/* Card 3: Assigned Charges History */}
-      <section style={cardStyle}>
-        <h3 style={cardTitleStyle}>Historial de Cargos Asignados</h3>
-        {allChargesHistory.length > 0 ? (
-          <div className="table-container">
-            <table className="users-table" style={{borderColor: 'var(--border-secondary)'}}>
-              <thead>
-                <tr>
-                  <th style={{color: 'var(--text-secondary)'}}>Fecha Asig.</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Inquilino</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Concepto</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Monto</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Estado</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allChargesHistory.sort((a,b) => new Date(b.dateAssignedISO).getTime() - new Date(a.dateAssignedISO).getTime()).map((charge: ChargeRecord) => (
-                  <tr key={charge.id}>
-                    <td data-label="Fecha Asig." style={{color: 'var(--text-primary)'}}>{charge.dateAssigned}</td>
-                    <td data-label="Inquilino" style={{color: 'var(--text-primary)'}}>{charge.tenantName} (ID: {charge.tenantId})</td>
-                    <td data-label="Concepto" style={{color: 'var(--text-primary)'}}>{charge.concept}</td>
-                    <td data-label="Monto" style={{color: 'var(--text-primary)'}}>${charge.amount.toFixed(2)}</td>
-                    <td data-label="Estado">
-                      <span className={`status-badge status-${
-                        charge.status === 'pending' ? 'warning' : 
-                        charge.status === 'paid' ? 'success' : 
-                        charge.status === 'deactivated' ? 'neutral' : 'default' // Added 'neutral' & 'default'
-                      }`}>
-                        {charge.status}
-                      </span>
-                    </td>
-                    <td data-label="Acciones">
-                      {charge.status === 'pending' && (
-                        <button
-                          onClick={() => handleDeactivateCharge(charge.id)}
-                          className="btn btn-danger btn-small"
-                          style={{fontSize: '0.8em', padding: '0.3em 0.6em', marginRight: '5px'}}
-                        >
-                          Desactivar
-                        </button>
-                      )}
-                      {charge.status === 'deactivated' && (
-                        <button
-                          onClick={() => handleReactivateCharge(charge.id)}
-                          className="btn btn-success btn-small" 
-                          style={{fontSize: '0.8em', padding: '0.3em 0.6em'}}
-                        >
-                          Reactivar
-                        </button>
-                      )}
-                    </td>
+      {/* Tabla de Historial de Cargos Asignados */}
+      <div className="dashboard-card" style={{ marginBottom: 'var(--spacing-xl)' }}>
+        <div className="card-header">
+          <h3 className="card-title">Historial de Cargos Asignados</h3>
+        </div>
+        <div className="card-content">
+          {allChargesHistory.length > 0 ? (
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Fecha Asig.</th>
+                    <th>Inquilino</th>
+                    <th>Concepto</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p style={{color: 'var(--text-secondary)', textAlign: 'center'}}>No hay cargos adicionales asignados.</p>
-        )}
-      </section>
+                </thead>
+                <tbody>
+                  {allChargesHistory.sort((a,b) => new Date(b.dateAssignedISO).getTime() - new Date(a.dateAssignedISO).getTime()).map((charge: ChargeRecord) => (
+                    <tr key={charge.id}>
+                      <td data-label="Fecha Asig.">{charge.dateAssigned}</td>
+                      <td data-label="Inquilino">{charge.tenantName}</td>
+                      <td data-label="Concepto">{charge.concept}</td>
+                      <td data-label="Monto">${charge.amount.toFixed(2)}</td>
+                      <td data-label="Estado">
+                        <span className={`badge ${ 
+                          charge.status === 'pending' ? 'badge-warning' : 
+                          charge.status === 'paid' ? 'badge-success' : 
+                          charge.status === 'deactivated' ? 'badge-secondary' : 'badge-light'
+                        }`}>
+                          {charge.status === 'pending' ? 'Pendiente' : 
+                           charge.status === 'paid' ? 'Pagado' : 
+                           charge.status === 'deactivated' ? 'Desactivado' : charge.status}
+                        </span>
+                      </td>
+                      <td data-label="Acciones" className="table-actions">
+                        {charge.status === 'pending' && (
+                          <button
+                            onClick={() => handleDeactivateCharge(charge.id)}
+                            className="btn btn-danger btn-sm"
+                          >
+                            Desactivar
+                          </button>
+                        )}
+                        {charge.status === 'deactivated' && (
+                          <button
+                            onClick={() => handleReactivateCharge(charge.id)}
+                            className="btn btn-success btn-sm"
+                          >
+                            Reactivar
+                          </button>
+                        )}
+                        {charge.status === 'paid' && (
+                           <span className="text-muted">N/A (Pagado)</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-center text-muted" style={{padding: 'var(--spacing-lg)'}}>No hay cargos adicionales asignados.</p>
+          )}
+        </div>
+      </div>
 
-      {/* Card 4: All Payments History */}
-      <section style={cardStyle}>
-        <h3 style={cardTitleStyle}>Historial de Todos los Pagos</h3>
-        {allPaymentsHistory.length > 0 ? (
-          <div className="table-container">
-            <table className="users-table" style={{borderColor: 'var(--border-secondary)'}}>
-              <thead>
-                <tr>
-                  <th style={{color: 'var(--text-secondary)'}}>Fecha</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Inquilino</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Concepto</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Monto</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Estado</th>
-                  <th style={{color: 'var(--text-secondary)'}}>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allPaymentsHistory.sort((a,b) => new Date(b.id).getTime() - new Date(a.id).getTime()).map((payment: PaymentRecord) => (
-                  <tr key={payment.id}>
-                    <td data-label="Fecha" style={{color: 'var(--text-primary)'}}>{payment.date}</td>
-                    <td data-label="Inquilino" style={{color: 'var(--text-primary)'}}>{payment.tenantName} (ID: {payment.tenantId})</td>
-                    <td data-label="Concepto" style={{color: 'var(--text-primary)'}}>{payment.concept}</td>
-                    <td data-label="Monto" style={{color: 'var(--text-primary)'}}>${payment.amount.toFixed(2)}</td>
-                    <td data-label="Estado"><span className={`status-badge status-${payment.status}`}>{payment.status}</span></td>
-                    <td data-label="Acciones">
-                      {payment.status === 'completed' && (
-                        <button
-                          onClick={() => handleRevertPayment(payment.id)}
-                          className="btn btn-danger btn-small"
-                          style={{fontSize: '0.8em', padding: '0.3em 0.6em', marginRight: '5px'}}
-                        >
-                          Revertir
-                        </button>
-                      )}
-                      {payment.status === 'reverted' && (
-                        <button
-                          onClick={() => handleReactivatePayment(payment.id)}
-                          className="btn btn-success btn-small"
-                          style={{fontSize: '0.8em', padding: '0.3em 0.6em'}}
-                        >
-                          Reactivar
-                        </button>
-                      )}
-                    </td>
+      {/* Tabla de Historial de Todos los Pagos */}
+      <div className="dashboard-card">
+        <div className="card-header">
+          <h3 className="card-title">Historial de Todos los Pagos</h3>
+        </div>
+        <div className="card-content">
+          {allPaymentsHistory.length > 0 ? (
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Inquilino</th>
+                    <th>Concepto</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p style={{color: 'var(--text-secondary)', textAlign: 'center'}}>No hay pagos registrados.</p>
-        )}
-      </section>
+                </thead>
+                <tbody>
+                  {allPaymentsHistory
+                    .slice() // Crear una copia superficial para no mutar el estado original
+                    .sort((a, b) => {
+                      const dateA = new Date(a.id).getTime();
+                      const dateB = new Date(b.id).getTime();
+                      // Si B no es una fecha válida, A va primero. Si A no es válida, B va primero.
+                      if (isNaN(dateB)) return -1;
+                      if (isNaN(dateA)) return 1;
+                      return dateB - dateA;
+                    })
+                    .map((payment: PaymentRecord) => (
+                    <tr key={payment.id}>
+                      <td data-label="Fecha">{payment.date}</td>
+                      <td data-label="Inquilino">{payment.tenantName}</td>
+                      <td data-label="Concepto">{payment.concept}</td>
+                      <td data-label="Monto">${payment.amount.toFixed(2)}</td>
+                      <td data-label="Estado">
+                        <span className={`badge ${ 
+                          payment.status === 'completed' ? 'badge-success' : 
+                          payment.status === 'pending' ? 'badge-warning' : 
+                          payment.status === 'failed' ? 'badge-danger' : 
+                          payment.status === 'reverted' ? 'badge-info' : 'badge-light'
+                        }`}>
+                           {payment.status === 'completed' ? 'Completado' : 
+                            payment.status === 'pending' ? 'Pendiente' : 
+                            payment.status === 'failed' ? 'Fallido' : 
+                            payment.status === 'reverted' ? 'Revertido' : payment.status}
+                        </span>
+                      </td>
+                      <td data-label="Acciones" className="table-actions">
+                        {payment.status === 'completed' && (
+                          <button
+                            onClick={() => handleRevertPayment(payment.id)}
+                            className="btn btn-warning btn-sm"
+                          >
+                            Revertir
+                          </button>
+                        )}
+                        {payment.status === 'reverted' && (
+                          <button
+                            onClick={() => handleReactivatePayment(payment.id)}
+                            className="btn btn-success btn-sm"
+                          >
+                            Reactivar (a Completado)
+                          </button>
+                        )}
+                         {(payment.status === 'pending' || payment.status === 'failed') && (
+                           <span className="text-muted">N/A</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-center text-muted" style={{padding: 'var(--spacing-lg)'}}>No hay pagos registrados.</p>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 };

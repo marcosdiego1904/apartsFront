@@ -345,105 +345,108 @@ const EnhancedUnitList: React.FC = () => {
             {/* Add Unit Modal */}
             {isAddModalOpen && (
                 <div className="modal-overlay active">
-                    <div className="modal-content">
+                    <div className="modal-content" style={{ maxWidth: '750px' }}>
                         <div className="modal-header">
                             <h3 className="modal-title"><BuildingIcon /> Add New Unit</h3>
                             <button className="modal-close-btn" onClick={closeModals}>&times;</button>
                         </div>
                         <form onSubmit={handleAddUnit}>
-                            <div className="form-grid form-grid-cols-2">
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="unit_number">
-                                        <BuildingIcon /> Unit Number*
-                                    </label>
-                                    <input
-                                        className="form-input"
-                                        type="text"
-                                        id="unit_number"
-                                        name="unit_number"
-                                        value={formData.unit_number}
-                                        onChange={handleInputChange}
-                                        required
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="building">
-                                        <BuildingIcon /> Building
-                                    </label>
-                                    <input
-                                        className="form-input"
-                                        type="text"
-                                        id="building"
-                                        name="building"
-                                        value={formData.building}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="floor">
-                                        <FloorIcon /> Floor
-                                    </label>
-                                    <input
-                                        className="form-input"
-                                        type="number"
-                                        id="floor"
-                                        name="floor"
-                                        value={formData.floor || ''}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="square_footage">
-                                        <SquareFootageIcon /> Square Footage
-                                    </label>
-                                    <input
-                                        className="form-input"
-                                        type="text"
-                                        id="square_footage"
-                                        name="square_footage"
-                                        value={formData.square_footage}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="number_of_bedrooms">
-                                        <BedroomIcon /> Number of Bedrooms
-                                    </label>
-                                    <input
-                                        className="form-input"
-                                        type="number"
-                                        id="number_of_bedrooms"
-                                        name="number_of_bedrooms"
-                                        min="0"
-                                        value={formData.number_of_bedrooms || ''}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label" htmlFor="number_of_bathrooms">
-                                        <BathroomIcon /> Number of Bathrooms
-                                    </label>
-                                    <input
-                                        className="form-input"
-                                        type="text"
-                                        id="number_of_bathrooms"
-                                        name="number_of_bathrooms"
-                                        value={formData.number_of_bathrooms}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div className="form-group" style={{ display: 'flex', alignItems: 'center' }}>
-                                    <label>
+                            <div style={{ padding: '1.5rem' }}>
+                                <div className="form-grid form-grid-cols-2">
+                                    <div className="form-group">
+                                        <label className="form-label" htmlFor="unit_number">
+                                            <BuildingIcon /> Unit Number*
+                                        </label>
                                         <input
+                                            className="form-input"
+                                            type="text"
+                                            id="unit_number"
+                                            name="unit_number"
+                                            value={formData.unit_number}
+                                            onChange={handleInputChange}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label" htmlFor="building">
+                                            <BuildingIcon /> Building
+                                        </label>
+                                        <input
+                                            className="form-input"
+                                            type="text"
+                                            id="building"
+                                            name="building"
+                                            value={formData.building}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label" htmlFor="floor">
+                                            <FloorIcon /> Floor
+                                        </label>
+                                        <input
+                                            className="form-input"
+                                            type="number"
+                                            id="floor"
+                                            name="floor"
+                                            value={formData.floor || ''}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label" htmlFor="square_footage">
+                                            <SquareFootageIcon /> Square Footage
+                                        </label>
+                                        <input
+                                            className="form-input"
+                                            type="text"
+                                            id="square_footage"
+                                            name="square_footage"
+                                            value={formData.square_footage}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label" htmlFor="number_of_bedrooms">
+                                            <BedroomIcon /> Number of Bedrooms
+                                        </label>
+                                        <input
+                                            className="form-input"
+                                            type="number"
+                                            id="number_of_bedrooms"
+                                            name="number_of_bedrooms"
+                                            min="0"
+                                            value={formData.number_of_bedrooms || ''}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label" htmlFor="number_of_bathrooms">
+                                            <BathroomIcon /> Number of Bathrooms
+                                        </label>
+                                        <input
+                                            className="form-input"
+                                            type="text"
+                                            id="number_of_bathrooms"
+                                            name="number_of_bathrooms"
+                                            value={formData.number_of_bathrooms}
+                                            onChange={handleInputChange}
+                                        />
+                                    </div>
+                                    <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            id="add_is_occupied"
                                             type="checkbox"
                                             name="is_occupied"
                                             checked={formData.is_occupied}
                                             onChange={handleInputChange}
+                                            style={{width: '16px', height: '16px'}}
                                         />
-                                        <span style={{ marginLeft: '8px' }}>
-                                            <CheckCircleIcon /> Occupied
-                                        </span>
-                                    </label>
+                                        <label htmlFor="add_is_occupied" style={{ marginLeft: '8px', display:'flex', alignItems:'center', cursor: 'pointer', fontWeight: 'normal' }}>
+                                            <CheckCircleIcon />
+                                            <span style={{ marginLeft: '4px' }}>Occupied</span>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                             <div className="modal-footer">
@@ -460,12 +463,13 @@ const EnhancedUnitList: React.FC = () => {
             {/* Edit Unit Modal */}
             {isEditModalOpen && selectedUnit && (
                 <div className="modal-overlay active">
-                    <div className="modal-content">
+                    <div className="modal-content" style={{ maxWidth: '750px' }}>
                         <div className="modal-header">
                             <h3 className="modal-title"><EditIcon /> Edit Unit</h3>
                             <button className="modal-close-btn" onClick={closeModals}>&times;</button>
                         </div>
                         <form onSubmit={handleEditUnit}>
+                          <div style={{ padding: '1.5rem' }}>
                             <div className="form-grid form-grid-cols-2">
                                 <div className="form-group">
                                     <label className="form-label" htmlFor="edit_unit_number">
@@ -547,20 +551,22 @@ const EnhancedUnitList: React.FC = () => {
                                         onChange={handleInputChange}
                                     />
                                 </div>
-                                <div className="form-group" style={{ display: 'flex', alignItems: 'center' }}>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            name="is_occupied"
-                                            checked={formData.is_occupied}
-                                            onChange={handleInputChange}
-                                        />
-                                        <span style={{ marginLeft: '8px' }}>
-                                            <CheckCircleIcon /> Occupied
-                                        </span>
+                                <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center' }}>
+                                    <input
+                                        id="edit_is_occupied"
+                                        type="checkbox"
+                                        name="is_occupied"
+                                        checked={formData.is_occupied}
+                                        onChange={handleInputChange}
+                                        style={{width: '16px', height: '16px'}}
+                                    />
+                                    <label htmlFor="edit_is_occupied" style={{ marginLeft: '8px', display:'flex', alignItems:'center', cursor: 'pointer', fontWeight: 'normal' }}>
+                                        <CheckCircleIcon />
+                                        <span style={{ marginLeft: '4px' }}>Occupied</span>
                                     </label>
                                 </div>
                             </div>
+                          </div>
                             <div className="modal-footer">
                                 <button type="button" className="btn btn-secondary" onClick={closeModals}>Cancel</button>
                                 <button type="submit" className="btn btn-success">
