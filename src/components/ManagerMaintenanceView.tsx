@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { FiEye, FiEdit, FiX, FiInfo, FiUser, FiHome, FiTool, FiHash, FiStar, FiMessageSquare, FiPaperclip } from 'react-icons/fi';
+import { FiEye, FiEdit, FiX, FiInfo, FiUser, FiTool, FiStar, FiMessageSquare } from 'react-icons/fi';
 import './ManagerMaintenanceView.css'; // Import the new CSS file
 import { getManagedRequests, updateManagedRequest } from '../services/maintenanceService';
 import type { MaintenanceRequest } from '../services/MockBackendService';

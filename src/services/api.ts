@@ -42,20 +42,17 @@ export interface CreateUnitPayload {
 // -------------------- FUNCIONES API PARA UNITS --------------------
 export const getAllUnits = async (): Promise<Unit[]> => {
     if (useMockService) {
-        // Los IDs del mock son strings, pero la interfaz espera numbers.
-        // Hacemos un casting aquí. En un caso real, se unificarían los tipos.
-        const mockUnits = await mockService.getAllUnits();
-        return mockUnits.map(u => ({...u, id: Number(u.id) })) as unknown as Unit[];
+        return await mockService.getAllUnits();
     }
     const response = await axios.get<Unit[]>(`${API_BASE_URL}/units`);
     return response.data;
 };
 
-export const getUnitById = async (id: number): Promise<Unit> => {
+export const getUnitById = async (id: string): Promise<Unit> => {
     if (useMockService) {
-        const mockUnit = await mockService.getAllUnits().then(units => units.find(u => u.id === String(id)));
+        const mockUnit = await mockService.getAllUnits().then(units => units.find(u => u.id === id));
         if (!mockUnit) throw new Error('Unit not found in mock');
-        return { ...mockUnit, id: Number(mockUnit.id) } as unknown as Unit;
+        return mockUnit;
     }
     const response = await axios.get<Unit>(`${API_BASE_URL}/units/${id}`);
     return response.data;
@@ -63,8 +60,7 @@ export const getUnitById = async (id: number): Promise<Unit> => {
 
 export const createNewUnit = async (unitData: CreateUnitPayload): Promise<Unit> => {
     if (useMockService) {
-        const newMockUnit = await mockService.createNewUnit(unitData);
-        return { ...newMockUnit, id: Number(newMockUnit.id) } as unknown as Unit;
+        return await mockService.createNewUnit(unitData);
     }
     const response = await axios.post<Unit>(`${API_BASE_URL}/units`, unitData);
     return response.data;
@@ -73,12 +69,12 @@ export const createNewUnit = async (unitData: CreateUnitPayload): Promise<Unit> 
 // -------------------- INTERFAZ y PAYLOAD PARA USER --------------------
 // Representa los datos de un usuario que RECIBIMOS del backend.
 export interface User {
-    id: number;
+    id: string;
     first_name: string;
     last_name: string;
     email: string;
     role: UserRole;
-    unit_id?: number | null;
+    unit_id?: string | null;
     // Si tu backend une y devuelve detalles de la unidad, podrías tener:
     // unit?: { id: number; unit_number: string; };
     phone_number?: string | null;
@@ -95,7 +91,7 @@ export type CreateUserPayload = {
     email: string;
     password: string; // Contraseña en texto plano que el backend hasheará
     role: UserRole;
-    unit_id?: number | null;
+    unit_id?: string | null;
     phone_number?: string;
     number_of_family_members?: number;
     is_active?: boolean;
@@ -108,7 +104,7 @@ export type UpdateUserPayload = Partial<{
     email: string;
     password: string; // Para cambiar la contraseña (opcional)
     role: UserRole;
-    unit_id: number | null;
+    unit_id: string | null;
     phone_number: string | null;
     number_of_family_members: number;
     is_active: boolean;
@@ -117,21 +113,18 @@ export type UpdateUserPayload = Partial<{
 // -------------------- FUNCIONES API PARA USERS --------------------
 export const getAllUsers = async (): Promise<User[]> => {
     if (useMockService) {
-        const mockUsers = await mockService.getAllUsers();
-        // El mock devuelve un User con más campos, pero debería ser compatible.
-        // Hacemos casting de ID a number para que coincida con la interfaz de `api.ts`.
-        return mockUsers.map(u => ({ ...u, id: Number(u.id) })) as unknown as User[];
+        return await mockService.getAllUsers();
     }
     const response = await axios.get<User[]>(`${API_BASE_URL}/users`);
     return response.data;
 };
 
-export const getUserById = async (id: number): Promise<User> => {
+export const getUserById = async (id: string): Promise<User> => {
     if (useMockService) {
         const users = await mockService.getAllUsers();
-        const user = users.find(u => u.id === String(id));
+        const user = users.find(u => u.id === id);
         if (!user) throw new Error('User not found in mock');
-        return { ...user, id: Number(user.id) } as unknown as User;
+        return user;
     }
     const response = await axios.get<User>(`${API_BASE_URL}/users/${id}`);
     return response.data;
@@ -142,51 +135,47 @@ export const getUserById = async (id: number): Promise<User> => {
 // Additional user functions to create, update, and delete users
 export const createNewUser = async (userData: CreateUserPayload): Promise<User> => {
     if (useMockService) {
-        const newUser = await mockService.createNewUser(userData);
-        return { ...newUser, id: Number(newUser.id) } as unknown as User;
+        return await mockService.createNewUser(userData);
     }
     const response = await axios.post<User>(`${API_BASE_URL}/users`, userData);
     return response.data;
 };
 
-export const updateExistingUser = async (id: number, userData: Partial<CreateUserPayload>): Promise<User> => {
+export const updateExistingUser = async (id: string, userData: Partial<CreateUserPayload>): Promise<User> => {
     if (useMockService) {
-        const updatedUser = await mockService.updateExistingUser(String(id), userData);
-        return { ...updatedUser, id: Number(updatedUser.id) } as unknown as User;
+        return await mockService.updateExistingUser(id, userData);
     }
     const response = await axios.put<User>(`${API_BASE_URL}/users/${id}`, userData);
     return response.data;
 };
 
-export const updateUserStatus = async (id: number, isActive: boolean): Promise<User> => {
+export const updateUserStatus = async (id: string, isActive: boolean): Promise<User> => {
     if (useMockService) {
-        const updatedUser = await mockService.updateExistingUser(String(id), { is_active: isActive });
-        return { ...updatedUser, id: Number(updatedUser.id) } as unknown as User;
+        return await mockService.updateExistingUser(id, { is_active: isActive });
     }
     const response = await axios.patch<User>(`${API_BASE_URL}/users/${id}/status`, { is_active: isActive });
     return response.data;
 };
 // Additional unit functions
-export const updateExistingUnit = async (id: number, unitData: Partial<CreateUnitPayload>): Promise<Unit> => {
+export const updateExistingUnit = async (id: string, unitData: Partial<CreateUnitPayload>): Promise<Unit> => {
     if (useMockService) {
-        const updatedUnit = await mockService.updateExistingUnit(String(id), unitData);
-        return { ...updatedUnit, id: Number(updatedUnit.id) } as unknown as Unit;
+        return await mockService.updateExistingUnit(id, unitData);
     }
     const response = await axios.put<Unit>(`${API_BASE_URL}/units/${id}`, unitData);
     return response.data;
 };
 
-export const deleteUnitById = async (id: number): Promise<void> => {
+export const deleteUnitById = async (id: string): Promise<void> => {
     if (useMockService) {
-        return await mockService.deleteUnitById(String(id));
+        return await mockService.deleteUnitById(id);
     }
     await axios.delete(`${API_BASE_URL}/units/${id}`);
 };
 // Añadir esta función a src/services/api.ts si no existe
 
-export const deleteUserById = async (id: number): Promise<void> => {
+export const deleteUserById = async (id: string): Promise<void> => {
     if (useMockService) {
-        return await mockService.deleteUserById(String(id));
+        return await mockService.deleteUserById(id);
     }
     await axios.delete(`${API_BASE_URL}/users/${id}`);
 };

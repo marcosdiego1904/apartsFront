@@ -29,7 +29,7 @@ export interface User {
   first_name: string;
   last_name: string;
   phone_number?: string | null;
-  unit_id?: number | null;
+  unit_id?: string | null;
   number_of_family_members?: number;
   is_active?: boolean;
   created_at?: string;
@@ -41,14 +41,14 @@ export interface User {
 export interface Unit {
   id: string; // Usamos string para consistencia en el mock
   unit_number: string;
-  building?: string | null;
-  floor?: number | null;
-  square_footage?: string | number | null;
-  number_of_bedrooms?: number | null;
-  number_of_bathrooms?: string | number | null;
-  is_occupied?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  building: string | null;
+  floor: number | null;
+  square_footage: string | null;
+  number_of_bedrooms: number | null;
+  number_of_bathrooms: string | null;
+  is_occupied: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface MaintenanceRequest {
@@ -181,7 +181,7 @@ export class MockBackendService {
         first_name: 'Jane',
         last_name: 'Doe',
         phone_number: '098-765-4321',
-        unit_id: 101, // Asignada a la unidad 101
+        unit_id: '101', // Asignada a la unidad 101
         number_of_family_members: 2,
         is_active: true,
         created_at: nowISO,
@@ -197,7 +197,7 @@ export class MockBackendService {
         first_name: 'Peter',
         last_name: 'Jones',
         phone_number: '555-555-5555',
-        unit_id: 102, // Asignado a la unidad 102
+        unit_id: '102', // Asignado a la unidad 102
         number_of_family_members: 1,
         is_active: false, // Inactivo
         created_at: nowISO,
@@ -212,8 +212,8 @@ export class MockBackendService {
         floor: 1,
         is_occupied: true,
         number_of_bedrooms: 2,
-        number_of_bathrooms: 1,
-        square_footage: '750 sq ft',
+        number_of_bathrooms: '1',
+        square_footage: '750',
         created_at: nowISO,
         updated_at: nowISO,
       },
@@ -224,8 +224,8 @@ export class MockBackendService {
         floor: 1,
         is_occupied: false,
         number_of_bedrooms: 1,
-        number_of_bathrooms: 1,
-        square_footage: '500 sq ft',
+        number_of_bathrooms: '1',
+        square_footage: '500',
         created_at: nowISO,
         updated_at: nowISO,
       },
@@ -236,8 +236,8 @@ export class MockBackendService {
         floor: 2,
         is_occupied: false,
         number_of_bedrooms: 3,
-        number_of_bathrooms: 2,
-        square_footage: '1100 sq ft',
+        number_of_bathrooms: '2',
+        square_footage: '1100',
         created_at: nowISO,
         updated_at: nowISO,
       },
@@ -909,7 +909,7 @@ export class MockBackendService {
 
         // --- Desvincular usuarios de la unidad eliminada ---
         this._users = this._users.map(user => {
-          if (user.unit_id === Number(unitId)) {
+          if (user.unit_id === unitId) {
             console.log(`Unlinking user ${user.username} from deleted unit ${unitId}`);
             return { ...user, unit_id: null };
           }
