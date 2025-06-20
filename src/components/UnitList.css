@@ -1,0 +1,234 @@
+/*
+  Estilos específicos para UnitList.tsx para replicar el diseño de UserList.
+  Se basa en las clases usadas en el JSX de UnitList y UserList para unificar la apariencia.
+*/
+
+/* Contenedor principal de la vista de gestión */
+.manager-view-container {
+    padding: 2rem;
+    background-color: #f9fafb; /* Un fondo ligeramente grisáceo */
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* Encabezado con el título y el botón de añadir */
+.manager-view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb; /* Divisor sutil */
+}
+
+.manager-view-header h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Tabla de datos */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.manager-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.manager-table th, .manager-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.manager-table th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #4b5563;
+}
+
+.manager-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Botones */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    color: #6b7280;
+    transition: color 0.2s;
+}
+
+.btn-icon:hover {
+    color: #1d4ed8;
+}
+
+.btn-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+
+/* Badges de estado */
+.status-badge {
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px; /* Píldora */
+    font-weight: 500;
+    font-size: 0.75rem;
+    text-transform: capitalize;
+}
+
+.status-occupied {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.status-vacant {
+    background-color: #d1fae5;
+    color: #047857;
+}
+
+/* Clases de texto y utilidad */
+.text-muted {
+    color: #6b7280;
+    font-style: italic;
+}
+
+.font-weight-bold {
+    font-weight: 600;
+    color: #111827;
+}
+
+/* --- Estilos para el Modal --- */
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal-content {
+    background: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 750px; /* Ancho máximo para el modal de edición/creación */
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(1);
+    transition: transform 0.3s ease-in-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 1.5rem;
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+}
+
+.modal-body {
+    padding-top: 0.5rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Estilos para el formulario dentro del modal */
+.form-grid {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.form-grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+.form-error-text {
+    color: #ef4444;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+/* El modal no necesita estilos aquí porque los toma de globalStyles.css */
+/* Si el modal sigue sin verse bien, se pueden añadir los estilos de .modal-backdrop, .modal-content, etc. aquí. */ 

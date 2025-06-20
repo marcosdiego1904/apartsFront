@@ -107,7 +107,7 @@ export interface ChargeRecord {
   concept: string; // Ej: "Reparación ventana", "Multa por ruido"
   dateAssigned: string; // Fecha legible de asignación
   dateAssignedISO: string; // Fecha ISO para ordenación/procesamiento
-  status: 'pending' | 'paid';
+  status: 'pending' | 'paid' | 'deactivated';
   paymentId?: string; // ID del PaymentRecordProperties que saldó este cargo
 }
 

@@ -1,7 +1,8 @@
-// src/components/Header.tsx (TEMPORAL - SOLO PARA DEPURAR)
+// src/components/Header.tsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { resetDemo } from '../services/demoService'; // Importar el servicio
 import logo from '../assets/logo.png';
 import '../styles/Header.css';
 import NotificationBell from './NotificationBell';
@@ -14,6 +15,26 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleReset = async () => {
+    const isConfirmed = window.confirm(
+      '¿Estás seguro de que quieres resetear todos los datos de la demo? Esta acción es irreversible.'
+    );
+
+    if (isConfirmed) {
+      try {
+        const response = await resetDemo();
+        alert('Datos de la demo reseteados con éxito.');
+        console.log(response.message);
+        // Forzar un logout y redirigir al login para un estado limpio.
+        logout(); 
+        navigate('/login');
+      } catch (error) {
+        console.error('Error al resetear los datos de la demo:', error);
+        alert('Hubo un error al intentar resetear los datos.');
+      }
+    }
   };
 
   const handleBellClick = () => {
@@ -37,6 +58,8 @@ const Header: React.FC = () => {
               {user.role === 'manager' && <Link to="/manager/dashboard" className="nav-link">Panel de Admin</Link>}
               <NotificationBell notificationCount={3} onBellClick={handleBellClick} />
               <button onClick={handleLogout} className="nav-link logout-button">Cerrar Sesión</button>
+              {/* Botón para Resetear la Demo */}
+              <button onClick={handleReset} className="nav-link reset-demo-button">Resetear Demo</button>
             </>
           ) : (
             <>

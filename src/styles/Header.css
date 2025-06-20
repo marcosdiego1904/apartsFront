@@ -1,0 +1,86 @@
+/* src/styles/Header.css */
+
+.reset-demo-button {
+  background-color: #ff4d4f; /* Un rojo llamativo */
+  color: white;
+  border: 1px solid #ff4d4f;
+  border-radius: 5px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 10px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.reset-demo-button:hover {
+  background-color: #d63c3e; /* Un rojo más oscuro al pasar el mouse */
+  transform: translateY(-1px);
+}
+
+.reset-demo-button:active {
+  background-color: #ad2f31;
+  transform: translateY(0);
+}
+
+/* Estilos generales del header para asegurar que se vea bien */
+.app-header {
+  background-color: #ffffff;
+  padding: 0 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 64px;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
+.header-logo {
+  height: 40px;
+  margin-right: 10px;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link {
+  margin: 0 15px;
+  text-decoration: none;
+  color: #555;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #007bff;
+}
+
+.logout-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+} 

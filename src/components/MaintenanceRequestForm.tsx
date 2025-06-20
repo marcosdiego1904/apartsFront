@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/MaintenanceRequestForm.css'; // Import the new CSS file
 import { useAuth } from '../context/AuthContext';
+import { submitRequest, submitRating } from '../services/maintenanceService';
+import type { MaintenanceRequestDisplayItem } from '../services/MockBackendService';
 
 interface FormData {
   title: string;
@@ -10,28 +12,6 @@ interface FormData {
   permissionToEnter: 'yes' | 'no' | '';
   contactMethod: 'email' | 'phone' | '';
   // photo?: File; // For actual file handling later
-}
-
-// Interface for displaying existing requests
-export interface MaintenanceRequestDisplayItem {
-  id: string;
-  title: string;
-  category: 'plumbing' | 'electrical' | 'appliance' | 'general';
-  dateSubmitted: string;
-  status: 'sent' | 'in-progress' | 'completed' | 'cancelled';
-  description: string; // Keep it brief for the list, full details on click maybe
-  urgency: 'low' | 'medium' | 'high';
-  tenantRating?: number;
-  tenantComment?: string;
-  isRatingSubmitted?: boolean; // New field
-  tenantId?: string;
-}
-
-// Simplified interface for data from manager's store
-interface ManagedRequestStatusInfo {
-  id: string;
-  status: 'Pendiente' | 'En Progreso' | 'Completado' | 'Rechazado';
-  // We could add managerComments or assignedTo here if needed for tenant view
 }
 
 interface MaintenanceRequestFormProps {
@@ -51,6 +31,7 @@ const MaintenanceRequestForm: React.FC<MaintenanceRequestFormProps> = ({ onFormS
   });
 
   const [existingRequests, setExistingRequests] = useState<MaintenanceRequestDisplayItem[]>(requests);
+  const [isLoading, setIsLoading] = useState(false); // For async operations
 
   useEffect(() => {
     setExistingRequests(requests);
@@ -87,8 +68,15 @@ const MaintenanceRequestForm: React.FC<MaintenanceRequestFormProps> = ({ onFormS
   //   }
   // };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!user) {
+      alert('You must be logged in to submit a request.');
+      return;
+    }
+    
+    setIsLoading(true);
+    
     const newRequestItem: MaintenanceRequestDisplayItem = {
       id: `REQ-${Date.now().toString().slice(-6)}`,
       title: formData.title,
@@ -97,30 +85,22 @@ const MaintenanceRequestForm: React.FC<MaintenanceRequestFormProps> = ({ onFormS
       status: 'sent',
       description: formData.description,
       urgency: formData.urgency as MaintenanceRequestDisplayItem['urgency'],
-      isRatingSubmitted: false, // Initialize for new requests
-      tenantId: user?.id,
+      isRatingSubmitted: false,
+      tenantId: user.id,
     };
 
     try {
-      const currentTenantSubmittedJSON = localStorage.getItem('tenantSubmittedMaintenanceRequests');
-      let allTenantSubmitted: MaintenanceRequestDisplayItem[] = [];
-      if (currentTenantSubmittedJSON) {
-        allTenantSubmitted = JSON.parse(currentTenantSubmittedJSON);
-      }
-      allTenantSubmitted.unshift(newRequestItem);
-      localStorage.setItem('tenantSubmittedMaintenanceRequests', JSON.stringify(allTenantSubmitted));
+      await submitRequest(newRequestItem);
+      onFormSubmit(); // Callback to refresh dashboard data
+      setCurrentPage(1);
+      alert('Solicitud de mantenimiento enviada.');
+      setFormData({ title: '', description: '', category: '', urgency: '', permissionToEnter: '', contactMethod: '' });
     } catch (error) {
-      console.error("Error updating tenantSubmittedMaintenanceRequests in localStorage:", error);
+      console.error("Error submitting maintenance request:", error);
+      alert("Hubo un error al enviar la solicitud.");
+    } finally {
+      setIsLoading(false);
     }
-    
-    onFormSubmit(); // Callback to refresh dashboard data
-
-    // No longer need to manually update local state, will be handled by parent
-    // setExistingRequests(prev => [newRequestItem, ...prev].sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime()));
-    
-    setCurrentPage(1);
-    alert('Solicitud de mantenimiento enviada.');
-    setFormData({ title: '', description: '', category: '', urgency: '', permissionToEnter: '', contactMethod: '' });
   };
   
   // Helper to get status class for styling
@@ -142,54 +122,43 @@ const MaintenanceRequestForm: React.FC<MaintenanceRequestFormProps> = ({ onFormS
     setDraftComments(prev => ({ ...prev, [requestId]: comment }));
   };
 
-  const handleSubmitRating = (requestId: string) => {
+  const handleSubmitRating = async (requestId: string) => {
     const ratingValue = draftRatings[requestId];
     const commentValue = draftComments[requestId] || '';
     
-    console.log(`Tenant submitting rating for ${requestId}: Rating: ${ratingValue}, Comment: '${commentValue}'`);
+    if (!ratingValue) {
+      alert("Por favor, seleccione una calificación antes de enviar.");
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      const savedTenantRequestsJSON = localStorage.getItem('tenantSubmittedMaintenanceRequests');
-      let tenantRequests: MaintenanceRequestDisplayItem[] = [];
-      if (savedTenantRequestsJSON) {
-        tenantRequests = JSON.parse(savedTenantRequestsJSON);
-      } else {
-        console.warn('No tenantSubmittedMaintenanceRequests found in localStorage to update rating.');
-      }
+      await submitRating({ requestId, rating: ratingValue, comment: commentValue });
+      
+      // Update local state for immediate UI feedback without a full refresh
+      setExistingRequests(prevRequests => 
+        prevRequests.map(req => 
+          req.id === requestId 
+            ? { ...req, tenantRating: ratingValue, tenantComment: commentValue, isRatingSubmitted: true } 
+            : req
+        )
+      );
+      // Optionally, call onFormSubmit() if a full refresh is desired
+      // onFormSubmit();
+      alert("Calificación enviada con éxito.");
 
-      const requestIndex = tenantRequests.findIndex(req => req.id === requestId);
-
-      if (requestIndex !== -1) {
-        const updatedRequest = {
-          ...tenantRequests[requestIndex],
-          tenantRating: ratingValue,
-          tenantComment: commentValue,
-          isRatingSubmitted: true, // Set the flag here
-        };
-        tenantRequests[requestIndex] = updatedRequest;
-        localStorage.setItem('tenantSubmittedMaintenanceRequests', JSON.stringify(tenantRequests));
-        console.log('Updated tenantSubmittedMaintenanceRequests with rating submitted flag:', tenantRequests);
-        
-        // Update local state for immediate UI feedback
-        setExistingRequests(prevRequests => 
-          prevRequests.map(req => 
-            req.id === requestId 
-              ? { ...req, tenantRating: ratingValue, tenantComment: commentValue, isRatingSubmitted: true } 
-              : req
-          ).sort((a, b) => new Date(b.dateSubmitted).getTime() - new Date(a.dateSubmitted).getTime())
-        );
-
-      } else {
-        console.warn(`Could not find request with ID ${requestId} to update rating in tenantSubmittedMaintenanceRequests.`);
-      }
     } catch (error) {
-      console.error("Error updating rating in tenantSubmittedMaintenanceRequests:", error);
+      console.error("Error submitting rating:", error);
+      alert("Hubo un error al enviar la calificación.");
+    } finally {
+      setIsLoading(false);
     }
-    // No need for setSubmittedRatings(prev => ({ ...prev, [requestId]: true })); anymore
   };
 
   return (
     <>
+      {isLoading && <div className="loading-overlay">Procesando...</div>}
       <div className="maintenance-form-container">
         <form onSubmit={handleSubmit} className="maintenance-form">
           <h2 className="maintenance-form-title">

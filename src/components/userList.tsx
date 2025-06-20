@@ -1,8 +1,18 @@
 // src/components/UserManagement.tsx
 import React, { useEffect, useState, useCallback } from 'react';
-import { getAllUsers, createNewUser, updateExistingUser, deleteUserById, seedSampleUsers, seedAllSampleData, checkDataStatus } from '../services/api';
+import { getAllUsers, createNewUser, updateExistingUser, deleteUserById } from '../services/api';
 import type { User, CreateUserPayload } from '../services/api';
-import { FiUser, FiUsers, FiPlus, FiMail, FiKey, FiShield, FiHome, FiPhone, FiCheckCircle, FiXCircle, FiEdit, FiTrash2, FiAlertTriangle, FiDatabase, FiRefreshCw } from 'react-icons/fi';
+import { FiUser, FiUsers, FiPlus, FiMail, FiKey, FiShield, FiHome, FiPhone, FiCheckCircle, FiXCircle, FiEdit, FiTrash2, FiAlertTriangle } from 'react-icons/fi';
+import LoadingSpinner from './LoadingSpinner';
+
+// Interfaz para los errores del formulario
+interface FormErrors {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  password?: string;
+  unit_id?: string;
+}
 
 const UserManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -26,6 +36,7 @@ const UserManagement: React.FC = () => {
     is_active: true
   };
   const [formData, setFormData] = useState<CreateUserPayload>(initialFormData);
+  const [formErrors, setFormErrors] = useState<FormErrors>({}); // Estado para errores de formulario
   
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error', visible: boolean}>({
     message: '',
@@ -61,6 +72,34 @@ const UserManagement: React.FC = () => {
     fetchUsers();
   }, [fetchUsers]);
 
+  const validateForm = (data: CreateUserPayload): FormErrors => {
+    const errors: FormErrors = {};
+
+    if (!data.first_name.trim()) {
+      errors.first_name = 'First name is required.';
+    }
+    if (!data.last_name.trim()) {
+      errors.last_name = 'Last name is required.';
+    }
+    if (!data.email.trim()) {
+      errors.email = 'Email is required.';
+    } else if (!/\S+@\S+\.\S+/.test(data.email)) {
+      errors.email = 'Email address is invalid.';
+    }
+
+    // La contraseña es obligatoria solo al crear (isEditModalOpen es false)
+    if (!isEditModalOpen && (!data.password || data.password.length < 6)) {
+      errors.password = 'Password is required and must be at least 6 characters long.';
+    }
+    
+    // Si la contraseña existe (en modo edición) pero es muy corta
+    if (isEditModalOpen && data.password && data.password.length < 6) {
+        errors.password = 'Password must be at least 6 characters long.';
+    }
+
+    return errors;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
     
@@ -76,10 +115,15 @@ const UserManagement: React.FC = () => {
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
+    // Limpiar el error del campo cuando el usuario empieza a escribir
+    if (formErrors[name as keyof FormErrors]) {
+        setFormErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
   
   const resetFormData = () => {
     setFormData(initialFormData);
+    setFormErrors({}); // También limpiar errores
   };
   
   const openAddModal = () => {
@@ -117,10 +161,16 @@ const UserManagement: React.FC = () => {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim() || !formData.password?.trim()) {
-      showToast('First name, last name, email, and password are required.', 'error');
+    const errors = validateForm(formData);
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      const errorMsg = "Please fix the errors in the form.";
+      setError(errorMsg); // Mostrar en la alerta principal
+      showToast(errorMsg, 'error');
       return;
     }
+
     try {
       setLoading(true);
       setError(null);
@@ -141,10 +191,17 @@ const UserManagement: React.FC = () => {
   const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
-    if (!formData.first_name.trim() || !formData.last_name.trim() || !formData.email.trim()) {
-      showToast('First name, last name, and email are required.', 'error');
+    
+    const errors = validateForm(formData);
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      const errorMsg = "Please fix the errors in the form.";
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
       return;
     }
+    
     try {
       setLoading(true);
       setError(null);
@@ -208,9 +265,22 @@ const UserManagement: React.FC = () => {
     return <p>Loading users...</p>;
   }
 
-  if (error && users.length === 0) {
-    return <p>Error loading users: {error}</p>;
-  }
+  const ErrorDisplay = () => {
+    if (!error) return null;
+    return (
+      <div className="alert alert-error" role="alert">
+        {error}
+        <button onClick={() => {
+          setError(null);
+          if (error.includes('loading users')) {
+            fetchUsers();
+          }
+        }} className="btn btn-sm btn-outline-secondary" style={{marginLeft: '10px'}}>
+          {error.includes('loading users') ? 'Try Again' : 'Close'}
+        </button>
+      </div>
+    );
+  };
 
   return (
     <div className="user-management-container">
@@ -231,97 +301,68 @@ const UserManagement: React.FC = () => {
         </button>
       </div>
 
-      {loading && !error && <div className="loading-container"><p>Loading users...</p></div>}
-      {error && (
-        <div className="alert alert-error" role="alert">
-          {error}
-          <button onClick={fetchUsers} className="btn btn-sm btn-outline-secondary" style={{marginLeft: '10px'}}>Try Again</button>
-        </div>
-      )}
+      <ErrorDisplay />
       
-      {!loading && !error && users.length === 0 && (
-         <div className="alert alert-info">No users found.</div>
-      )}
+      <div className="content-area" style={{ position: 'relative' }}>
+        {loading && <LoadingSpinner />}
+        
+        {!loading && users.length === 0 && !error && (
+           <div className="alert alert-info">No users found.</div>
+        )}
 
-      {/* Users Table conditional rendering block */}
-      {!loading && !error && users.length > 0 && (
-        <div className="table-container">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th><FiUser /> ID</th>
-                <th><FiUser /> Name</th>
-                <th><FiMail /> Email</th>
-                <th><FiShield /> Role</th>
-                <th><FiHome /> Unit</th>
-                <th><FiPhone /> Phone</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user.id}>
-                  <td>{user.id}</td>
-                  <td>{user.first_name} {user.last_name}</td>
-                  <td>{user.email}</td>
-                  <td>
-                    {user.role === 'manager' ? (
-                      <span className="badge badge-primary-inverted">
-                        <FiShield /> {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </span>
-                    ) : (
-                      <span className="badge badge-secondary-inverted">
-                        <FiUser /> {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </span>
-                    )}
-                  </td>
-                  <td>{user.unit_id ? (
-                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><FiHome /> {user.unit_id}</span>
-                      ) : '-'}
-                  </td>
-                  <td>{user.phone_number ? (
-                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}><FiPhone /> {user.phone_number}</span>
-                      ) : '-'}
-                  </td>
-                  <td className="text-center">
-                    <span 
-                      className={`badge ${user.is_active ? 'badge-success' : 'badge-danger'} cursor-pointer`}
-                      onClick={() => toggleUserStatus(user)}
-                      title={`Click to ${user.is_active ? 'deactivate' : 'activate'} user`}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      {user.is_active ? (
-                        <><FiCheckCircle /> Active</>
-                      ) : (
-                        <><FiXCircle /> Inactive</>
-                      )}
-                    </span>
-                  </td>
-                  <td className="table-actions">
-                    <button 
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => openEditModal(user)}
-                      title="Edit user"
-                    >
-                      <FiEdit /> Edit
-                    </button>
-                    <button 
-                      className="btn btn-danger btn-sm"
-                      onClick={() => openDeleteConfirmModal(user)} 
-                      title="Delete user"
-                      style={{marginLeft: 'var(--spacing-xs)'}}
-                    >
-                      <FiTrash2 /> Delete
-                    </button>
-                  </td>
+        {/* Users Table conditional rendering block */}
+        {users.length > 0 && (
+          <div className="table-container">
+            <table className="users-table">
+              <thead>
+                <tr>
+                  <th><FiUser /> Name</th>
+                  <th><FiMail /> Email</th>
+                  <th><FiShield /> Role</th>
+                  <th><FiHome /> Unit ID</th>
+                  <th><FiPhone /> Phone</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td>{user.first_name} {user.last_name}</td>
+                    <td>{user.email}</td>
+                    <td>
+                      <span className={`role-badge role-${user.role}`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td>{user.unit_id || 'N/A'}</td>
+                    <td>{user.phone_number || 'N/A'}</td>
+                    <td>
+                      <span 
+                        onClick={() => toggleUserStatus(user)} 
+                        className={`status-badge status-${user.is_active ? 'active' : 'inactive'}`}
+                        style={{cursor: 'pointer'}}
+                        title={`Click to ${user.is_active ? 'deactivate' : 'activate'}`}
+                      >
+                        {user.is_active ? <FiCheckCircle /> : <FiXCircle />}
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td>
+                      <button onClick={() => openEditModal(user)} className="btn-icon btn-edit" title="Edit">
+                        <FiEdit />
+                      </button>
+                      <button onClick={() => openDeleteConfirmModal(user)} className="btn-icon btn-delete" title="Delete">
+                        <FiTrash2 />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Add User Modal */}
       {isAddModalOpen && (
@@ -331,15 +372,15 @@ const UserManagement: React.FC = () => {
               <h3 className="modal-title"><FiUser /> Add New User</h3>
               <button className="modal-close-btn" onClick={closeModals}>&times;</button>
             </div>
-            <form onSubmit={handleAddUser}>
+            <form onSubmit={handleAddUser} noValidate>
               <div style={{ padding: '1.5rem' }}>
-                <div className="form-grid form-grid-cols-2">
+                <div className="form-grid form-grid-cols-2 form-grid-condensed">
                   <div className="form-group">
                     <label className="form-label" htmlFor="first_name">
                       <FiUser /> First Name
                     </label>
                     <input
-                      className="form-input"
+                      className={`form-input ${formErrors.first_name ? 'is-invalid' : ''}`}
                       type="text"
                       id="first_name"
                       name="first_name"
@@ -347,13 +388,14 @@ const UserManagement: React.FC = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    {formErrors.first_name && <div className="invalid-feedback">{formErrors.first_name}</div>}
                   </div>
                   <div className="form-group">
                     <label className="form-label" htmlFor="last_name">
                       <FiUser /> Last Name
                     </label>
                     <input
-                      className="form-input"
+                      className={`form-input ${formErrors.last_name ? 'is-invalid' : ''}`}
                       type="text"
                       id="last_name"
                       name="last_name"
@@ -361,13 +403,14 @@ const UserManagement: React.FC = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    {formErrors.last_name && <div className="invalid-feedback">{formErrors.last_name}</div>}
                   </div>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="form-label" htmlFor="email">
                       <FiMail /> Email
                     </label>
                     <input
-                      className="form-input"
+                      className={`form-input ${formErrors.email ? 'is-invalid' : ''}`}
                       type="email"
                       id="email"
                       name="email"
@@ -375,20 +418,22 @@ const UserManagement: React.FC = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    {formErrors.email && <div className="invalid-feedback">{formErrors.email}</div>}
                   </div>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="form-label" htmlFor="password">
                       <FiKey /> Password
                     </label>
                     <input
-                      className="form-input"
+                      className={`form-input ${formErrors.password ? 'is-invalid' : ''}`}
                       type="password"
                       id="password"
                       name="password"
                       value={formData.password}
                       onChange={handleInputChange}
-                      required={isAddModalOpen} // Solo requerido para nuevos usuarios
+                      required={isAddModalOpen}
                     />
+                    {formErrors.password && <div className="invalid-feedback">{formErrors.password}</div>}
                   </div>
                   <div className="form-group">
                     <label className="form-label" htmlFor="role">
@@ -463,8 +508,8 @@ const UserManagement: React.FC = () => {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={closeModals}>Cancel</button>
-                <button type="submit" className="btn btn-primary">
-                  <FiPlus /> Add User
+                <button type="submit" className="btn btn-primary" disabled={loading}>
+                  <FiPlus /> {loading ? 'Saving...' : 'Add User'}
                 </button>
               </div>
             </form>
@@ -480,15 +525,15 @@ const UserManagement: React.FC = () => {
               <h3 className="modal-title"><FiEdit /> Edit User</h3>
               <button className="modal-close-btn" onClick={closeModals}>&times;</button>
             </div>
-            <form onSubmit={handleEditUser}>
+            <form onSubmit={handleEditUser} noValidate>
               <div style={{ padding: '1.5rem' }}>
-                <div className="form-grid form-grid-cols-2">
+                <div className="form-grid form-grid-cols-2 form-grid-condensed">
                   <div className="form-group">
                     <label className="form-label" htmlFor="edit_first_name">
                       <FiUser /> First Name
                     </label>
                     <input
-                      className="form-input"
+                      className={`form-input ${formErrors.first_name ? 'is-invalid' : ''}`}
                       type="text"
                       id="edit_first_name"
                       name="first_name"
@@ -496,13 +541,14 @@ const UserManagement: React.FC = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    {formErrors.first_name && <div className="invalid-feedback">{formErrors.first_name}</div>}
                   </div>
                   <div className="form-group">
                     <label className="form-label" htmlFor="edit_last_name">
                       <FiUser /> Last Name
                     </label>
                     <input
-                      className="form-input"
+                      className={`form-input ${formErrors.last_name ? 'is-invalid' : ''}`}
                       type="text"
                       id="edit_last_name"
                       name="last_name"
@@ -510,13 +556,14 @@ const UserManagement: React.FC = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    {formErrors.last_name && <div className="invalid-feedback">{formErrors.last_name}</div>}
                   </div>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="form-label" htmlFor="edit_email">
                       <FiMail /> Email
                     </label>
                     <input
-                      className="form-input"
+                      className={`form-input ${formErrors.email ? 'is-invalid' : ''}`}
                       type="email"
                       id="edit_email"
                       name="email"
@@ -524,19 +571,22 @@ const UserManagement: React.FC = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    {formErrors.email && <div className="invalid-feedback">{formErrors.email}</div>}
                   </div>
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="form-label" htmlFor="edit_password">
-                      <FiKey /> Password (Dejar en blanco para mantener actual)
+                      <FiKey /> Password (leave blank to keep current)
                     </label>
                     <input
-                      className="form-input"
+                      className={`form-input ${formErrors.password ? 'is-invalid' : ''}`}
                       type="password"
                       id="edit_password"
                       name="password"
+                      placeholder="••••••••"
                       value={formData.password}
                       onChange={handleInputChange}
                     />
+                    {formErrors.password && <div className="invalid-feedback">{formErrors.password}</div>}
                   </div>
                   <div className="form-group">
                     <label className="form-label" htmlFor="edit_role">
@@ -613,8 +663,8 @@ const UserManagement: React.FC = () => {
                 <button type="button" className="btn btn-secondary" onClick={closeModals}>
                   <FiXCircle /> Cancel
                 </button>
-                <button type="submit" className="btn btn-success">
-                  <FiCheckCircle /> Update User
+                <button type="submit" className="btn btn-success" disabled={loading}>
+                  <FiCheckCircle /> {loading ? 'Saving...' : 'Update User'}
                 </button>
               </div>
             </form>

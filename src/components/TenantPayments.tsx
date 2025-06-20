@@ -1,7 +1,8 @@
-import React, { useState, type ChangeEvent, type FormEvent, useEffect, useRef } from 'react';
+import React, { useState, type ChangeEvent, type FormEvent, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import type { User, PaymentRecordProperties, ChargeRecord, PaymentDetails } from '../types'; // Importar los tipos centralizados
+import type { PaymentRecordProperties, ChargeRecord, PaymentDetails } from '../types'; // Importar los tipos centralizados
 import { getMonthYearString, getFirstDayOfMonth, getFirstDayOfNextMonth, getSortableDateFromConcept, determineNextPayableMonth } from '../utils/dateUtils';
+import { getPaymentHistory, getCharges, makePayment } from '../services/paymentService';
 
 // Constantes
 const PREDETERMINED_CARD = {
@@ -10,8 +11,6 @@ const PREDETERMINED_CARD = {
   CVV: '123',
   HOLDER_NAME: 'Demo User'
 };
-const LOCAL_STORAGE_PAYMENT_HISTORY_KEY = 'tenantPaymentHistory';
-const LOCAL_STORAGE_CHARGES_HISTORY_KEY = 'tenantChargesHistory'; // Nueva constante
 const DEFAULT_MONTHLY_AMOUNT = 150.75;
 const PAYMENT_DUE_DAY = 15;
 
@@ -21,7 +20,6 @@ interface TenantPaymentsProps {
 
 const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => {
   const { user } = useAuth();
-  const isInitialMount = useRef(true);
 
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
     cardNumber: '',
@@ -30,6 +28,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
     cvv: '',
   });
 
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [tenantViewHistory, setTenantViewHistory] = useState<PaymentRecordProperties[]>([]);
   const [tenantCharges, setTenantCharges] = useState<ChargeRecord[]>([]);
   const [selectedCharges, setSelectedCharges] = useState<string[]>([]);
@@ -39,94 +38,58 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
   const [urgentPaymentContext, setUrgentPaymentContext] = useState<{ message: string; concept: string; isReverted: boolean } | null>(null);
   const [showPaymentForm, setShowPaymentForm] = useState<boolean>(false);
 
-  // Cargar historial de pagos y cargos, determinar mes de pago.
-  useEffect(() => {
+  const loadPaymentData = useCallback(async () => {
     if (!user) return;
-    console.log("[TenantPayments-LoadEffect] Attempting to load payment history for tenant:", user.id);
-    const storedHistory = localStorage.getItem(LOCAL_STORAGE_PAYMENT_HISTORY_KEY);
-    let allPayments: PaymentRecordProperties[] = [];
-    if (storedHistory) {
-      try {
-        const parsedHistory = JSON.parse(storedHistory);
-        if (Array.isArray(parsedHistory)) {
-          allPayments = parsedHistory;
+
+    setIsLoading(true);
+    setPaymentError(null);
+
+    try {
+      const [history, charges] = await Promise.all([
+        getPaymentHistory(user.id),
+        getCharges(user.id),
+      ]);
+
+      const sortedHistory = [...history].sort((a, b) => {
+          const dateA = getSortableDateFromConcept(a.concept) || new Date(a.id);
+          const dateB = getSortableDateFromConcept(b.concept) || new Date(b.id);
+          return dateB.getTime() - dateA.getTime();
+      });
+
+      setTenantViewHistory(sortedHistory);
+      setTenantCharges(charges);
+
+      const nextPayableMonth = determineNextPayableMonth(sortedHistory, getFirstDayOfMonth(new Date()));
+      setCurrentPaymentMonth(nextPayableMonth);
+
+      if (nextPayableMonth) {
+        const conceptOfNextPayableMonth = `Alquiler ${getMonthYearString(nextPayableMonth)}`;
+        const revertedPayment = sortedHistory.find(
+          p => p.concept === conceptOfNextPayableMonth && p.status === 'reverted' && p.tenantId === user.id
+        );
+        if (revertedPayment) {
+          setUrgentPaymentContext({
+            message: `Atención: El pago para ${revertedPayment.concept} fue revertido. Por favor, realiza el pago nuevamente.`,
+            concept: revertedPayment.concept,
+            isReverted: true,
+          });
         } else {
-          console.warn("[TenantPayments-LoadEffect] Stored history is not an array.");
+          setUrgentPaymentContext(null);
         }
-      } catch (error) {
-        console.error("[TenantPayments-LoadEffect] Failed to parse stored history:", error);
-      }
-    }
-    const tenantSpecificPaymentsUnsorted = allPayments.filter(p => p.tenantId === user.id);
-    
-    const tenantSpecificPayments = [...tenantSpecificPaymentsUnsorted].sort((a, b) => {
-      const dateA = getSortableDateFromConcept(a.concept);
-      const dateB = getSortableDateFromConcept(b.concept);
-
-      if (dateA && dateB) {
-        if (dateB.getTime() !== dateA.getTime()) {
-          return dateB.getTime() - dateA.getTime(); 
-        }
-        try {
-            const originalDateA = new Date(a.id).getTime();
-            const originalDateB = new Date(b.id).getTime();
-            if (!isNaN(originalDateA) && !isNaN(originalDateB)) {
-                return originalDateB - originalDateA; 
-            }
-        } catch (e) { /* no-op */ }
-      }
-      return 0; 
-    });
-
-    setTenantViewHistory(tenantSpecificPayments);
-    console.log("[TenantPayments-LoadEffect] Loaded and sorted tenant specific payments:", tenantSpecificPayments);
-
-    let baseDateForSearchLogic: Date | null = getFirstDayOfMonth(new Date()); 
-    if (tenantSpecificPayments.length > 0) {
-      const earliestPaymentTimestamp = Math.min(
-        ...tenantSpecificPayments.map(p => {
-          const dateFromId = new Date(p.id);
-          return !isNaN(dateFromId.getTime()) ? dateFromId.getTime() : Infinity;
-        })
-      );
-      if (earliestPaymentTimestamp !== Infinity && earliestPaymentTimestamp > 0) { 
-        baseDateForSearchLogic = getFirstDayOfMonth(new Date(earliestPaymentTimestamp));
-      }
-    }
-
-    const nextPayableMonth = determineNextPayableMonth(tenantSpecificPayments, baseDateForSearchLogic);
-    setCurrentPaymentMonth(nextPayableMonth);
-
-    if (nextPayableMonth) {
-      const conceptOfNextPayableMonth = `Alquiler ${getMonthYearString(nextPayableMonth)}`;
-      const revertedPayment = tenantSpecificPayments.find(
-        p => p.concept === conceptOfNextPayableMonth && p.status === 'reverted' && p.tenantId === user.id
-      );
-      if (revertedPayment) {
-        setUrgentPaymentContext({
-          message: `Atención: El pago para ${revertedPayment.concept} fue revertido. Por favor, realiza el pago nuevamente.`,
-          concept: revertedPayment.concept,
-          isReverted: true,
-        });
       } else {
         setUrgentPaymentContext(null);
       }
-    } else {
-      setUrgentPaymentContext(null); // No hay mes de alquiler pagable
+    } catch (error) {
+      console.error("[TenantPayments] Failed to fetch payment data:", error);
+      setPaymentError("No se pudo cargar la información de pagos. Por favor, intente más tarde.");
+    } finally {
+      setIsLoading(false);
     }
-    
-    const storedChargesHistory = localStorage.getItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY);
-    let allCharges: ChargeRecord[] = [];
-    if (storedChargesHistory) {
-      try {
-        allCharges = JSON.parse(storedChargesHistory);
-        if (!Array.isArray(allCharges)) allCharges = [];
-      } catch (e) { allCharges = []; }
-    }
-    const currentTenantCharges = allCharges.filter(c => c.tenantId === user.id);
-    setTenantCharges(currentTenantCharges);
+  }, [user]);
 
-  }, [user]); 
+  useEffect(() => {
+    loadPaymentData();
+  }, [loadPaymentData]);
 
   // Efecto para recalcular totalAmountToPay
   useEffect(() => {
@@ -148,38 +111,25 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
     amount += totalSelectedChargesAmount;
     setTotalAmountToPay(amount);
 
-    // Mostrar el formulario de pago si hay algo que pagar (alquiler o cargos seleccionados)
     setShowPaymentForm(isAlquilerDue || selectedChargesObjects.length > 0);
 
   }, [currentPaymentMonth, tenantCharges, selectedCharges, user, tenantViewHistory]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-    }
-  }, []);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     let formattedValue = value;
 
     if (name === 'cardNumber') {
-      // Remove non-digits, allow spaces for formatting if desired (currently just strips non-digits)
-      // Limit to 19 characters (e.g., 16 digits + 3 spaces)
       formattedValue = value.replace(/[^0-9]/g, '').slice(0, 16);
-      // Optional: Add spaces for readability e.g. XXXX XXXX XXXX XXXX
-      // formattedValue = formattedValue.replace(/(\d{4})(?=\d)/g, '$1 ').trim().slice(0, 19);
     } else if (name === 'expiryDate') {
-      // MM/YY format
       formattedValue = value.replace(/[^0-9]/g, '');
       if (formattedValue.length > 2) {
         formattedValue = formattedValue.slice(0, 2) + '/' + formattedValue.slice(2, 4);
-      } else if (value.length === 3 && value.includes('/')) { // Handle backspace from MM/Y to MM
+      } else if (value.length === 3 && value.includes('/')) {
          formattedValue = value.slice(0,2);
       }
-      formattedValue = formattedValue.slice(0, 5); // MM/YY
+      formattedValue = formattedValue.slice(0, 5);
     } else if (name === 'cvv') {
-      // Limit to 3 or 4 digits
       formattedValue = value.replace(/[^0-9]/g, '').slice(0, 4);
     }
 
@@ -196,10 +146,10 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
     });
   };
 
-  const handleSubmitPayment = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmitPayment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPaymentError(null);
-    setUrgentPaymentContext(null); // Limpiar contexto de urgencia al intentar un pago
+    setUrgentPaymentContext(null);
 
     if (!user) {
       setPaymentError("Error: Usuario no autenticado.");
@@ -211,44 +161,41 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
       return;
     }
 
-    // Simulación de validación y procesamiento de pago
     if (
-      paymentDetails.cardNumber === PREDETERMINED_CARD.NUMBER &&
-      paymentDetails.expiryDate === PREDETERMINED_CARD.EXPIRY_DATE &&
-      paymentDetails.cvv === PREDETERMINED_CARD.CVV &&
-      paymentDetails.cardHolderName.trim() === PREDETERMINED_CARD.HOLDER_NAME
+      paymentDetails.cardNumber !== PREDETERMINED_CARD.NUMBER ||
+      paymentDetails.expiryDate !== PREDETERMINED_CARD.EXPIRY_DATE ||
+      paymentDetails.cvv !== PREDETERMINED_CARD.CVV ||
+      paymentDetails.cardHolderName.trim() !== PREDETERMINED_CARD.HOLDER_NAME
     ) {
-      const paymentId = new Date().toISOString(); // ID único para este pago general
-      const paymentDate = new Date().toLocaleDateString('es-ES');
-      let paymentConcept = "";
+      setPaymentError("Los detalles de la tarjeta de crédito son incorrectos.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const paymentId = new Date().toISOString();
       let rentalPaidThisTransaction = false;
+      let paymentConcept = "";
 
-      // Determinar si el alquiler se está pagando en esta transacción
-      let isAlquilerCurrentlyDue = false;
       if (currentPaymentMonth) {
-        isAlquilerCurrentlyDue = !tenantViewHistory.find(p => p.concept === `Alquiler ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed');
-      }
-
-      if (currentPaymentMonth && isAlquilerCurrentlyDue && (totalAmountToPay >= DEFAULT_MONTHLY_AMOUNT || selectedCharges.length === 0) ) {
-        // Consideramos que el alquiler se paga si está vencido y el monto total es suficiente o no hay cargos seleccionados (implicando que se paga solo alquiler)
-        paymentConcept += `Alquiler ${getMonthYearString(currentPaymentMonth)}`;
-        rentalPaidThisTransaction = true;
-      }
-      
-      const paidChargesDetails: string[] = [];
-      const updatedCharges = tenantCharges.map(charge => {
-        if (selectedCharges.includes(charge.id) && charge.status === 'pending') {
-          paidChargesDetails.push(`${charge.concept} ($${charge.amount.toFixed(2)})`);
-          return { ...charge, status: 'paid' as 'paid', paymentId: paymentId };
+        const isAlquilerDue = !tenantViewHistory.find(p => p.concept === `Alquiler ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed');
+        if (isAlquilerDue && (totalAmountToPay >= DEFAULT_MONTHLY_AMOUNT || selectedCharges.length === 0)) {
+          rentalPaidThisTransaction = true;
+          paymentConcept = `Alquiler ${getMonthYearString(currentPaymentMonth)}`;
         }
-        return charge;
-      });
+      }
 
-      if (paidChargesDetails.length > 0) {
-        if (paymentConcept !== "") {
+      const paidChargesDetails = tenantCharges
+        .filter(c => selectedCharges.includes(c.id) && c.status === 'pending')
+        .map(c => ({ id: c.id, concept: c.concept, amount: c.amount }));
+
+      const paidChargesConcepts = paidChargesDetails.map(c => c.concept);
+      if (paidChargesConcepts.length > 0) {
+        if (paymentConcept) {
           paymentConcept += " + ";
         }
-        paymentConcept += `Cargos (${paidChargesDetails.join(', ')})`;
+        paymentConcept += `Cargos (${paidChargesConcepts.join(', ')})`;
       }
       
       if (!paymentConcept) {
@@ -257,52 +204,40 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
             setPaymentError("Error al determinar el concepto del pago.");
             return;
          }
-      }
-
-      const newPaymentRecord: PaymentRecordProperties = {
-        id: paymentId,
-        date: paymentDate,
+       }
+      
+      const paymentData = {
+        tenantId: user.id,
+        tenantName: `${user.firstName} ${user.lastName}`,
         amount: totalAmountToPay,
         concept: paymentConcept,
-        status: 'completed',
-        tenantId: user.id,
-        tenantName: user.firstName || user.username || 'Inquilino',
+        rentalPaidThisTransaction,
+        paidChargesDetails,
+        paymentId,
       };
 
-      // Actualizar historial de pagos
-      const updatedHistory = [newPaymentRecord, ...tenantViewHistory];
-      localStorage.setItem(LOCAL_STORAGE_PAYMENT_HISTORY_KEY, JSON.stringify(updatedHistory));
-      setTenantViewHistory(updatedHistory);
-
-      // Actualizar historial de cargos
-      const updatedChargesFromStorage: ChargeRecord[] = JSON.parse(localStorage.getItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY) || '[]');
-      const otherTenantCharges = updatedChargesFromStorage.filter(c => c.tenantId !== user.id);
-      const finalCharges = [...otherTenantCharges, ...updatedCharges.filter(c => c.tenantId === user.id)];
-      localStorage.setItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY, JSON.stringify(finalCharges));
+      await makePayment(paymentData);
       
-      setTenantCharges(updatedCharges); // Actualizar estado local de cargos
-      setSelectedCharges([]); // Limpiar selección
+      console.log("[TenantPayments] Payment successful!");
 
-      // Resetear formulario y recalcular mes de pago si el alquiler fue pagado
+      setSelectedCharges([]);
       setPaymentDetails({ cardNumber: '', cardHolderName: '', expiryDate: '', cvv: '' });
-      
-      if (rentalPaidThisTransaction && currentPaymentMonth) {
-        const nextPayable = determineNextPayableMonth(updatedHistory, getFirstDayOfNextMonth(currentPaymentMonth));
-        setCurrentPaymentMonth(nextPayable);
-        setUrgentPaymentContext(null); // Limpiar contexto urgente
-      }
-      // Si no se pagó alquiler, pero sí cargos, currentPaymentMonth no cambia.
-      // El totalAmountToPay se recalculará via useEffect.
-
-      alert('Pago realizado con éxito!');
-
       if (onPaymentSuccess) {
         onPaymentSuccess();
       }
-    } else {
-      setPaymentError('Los detalles de la tarjeta son incorrectos. Por favor, usa los datos de demostración proporcionados e intenta de nuevo.');
+      await loadPaymentData();
+
+    } catch (error) {
+      console.error("[TenantPayments] Payment failed:", error);
+      setPaymentError("Ocurrió un error al procesar el pago.");
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return <div>Cargando información de pagos...</div>;
+  }
 
   // Variables para el JSX, con manejo de nulabilidad para currentPaymentMonth
   let displayCurrentPaymentMonthStr: string | null = null;

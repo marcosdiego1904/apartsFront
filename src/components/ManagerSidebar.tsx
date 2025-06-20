@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiGrid, FiUsers, FiHome, FiCreditCard, FiTool, FiLogOut } from 'react-icons/fi';
+import { FiGrid, FiUsers, FiHome, FiCreditCard, FiTool } from 'react-icons/fi';
 
 type ActiveView = 'dashboard' | 'users' | 'units' | 'payments' | 'maintenance' | 'profile';
 

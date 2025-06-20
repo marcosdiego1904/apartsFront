@@ -1,35 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // No necesitamos useAuth aquí si este componente solo es para managers y el enrutamiento ya lo maneja.
 // import { useAuth } from '../context/AuthContext'; 
-import type { User } from '../types'; // UserRole no es necesario aquí directamente
+import {
+  getAllPaymentHistory,
+  getAllCharges,
+  updatePaymentStatus,
+  assignCharge,
+  updateChargeStatus
+} from '../services/paymentService';
+import type { PaymentRecordProperties as PaymentRecord, ChargeRecord } from '../types';
 
-// Interfaces (duplicadas temporalmente)
-interface PaymentRecord {
-  id: string;
-  date: string;
-  amount: number;
-  concept: string;
-  status: 'completed' | 'pending' | 'failed' | 'reverted';
-  tenantId: string;
-  tenantName: string;
-}
+// The local interfaces are no longer needed.
+// interface PaymentRecord { ... }
+// interface ChargeRecord { ... }
 
-// Nueva interfaz para Cargos Adicionales
-interface ChargeRecord {
-  id: string;
-  tenantId: string;
-  tenantName: string;
-  amount: number;
-  concept: string;
-  dateAssigned: string; // Fecha legible
-  dateAssignedISO: string; // Fecha ISO para ordenación/procesamiento
-  status: 'pending' | 'paid' | 'deactivated';
-  paymentId?: string; // ID del pago que saldó este cargo
-}
-
-// Constantes (duplicadas temporalmente)
-const LOCAL_STORAGE_PAYMENT_HISTORY_KEY = 'tenantPaymentHistory';
-const LOCAL_STORAGE_CHARGES_HISTORY_KEY = 'tenantChargesHistory';
+// Constantes
+// const LOCAL_STORAGE_PAYMENT_HISTORY_KEY = 'tenantPaymentHistory';
+// const LOCAL_STORAGE_CHARGES_HISTORY_KEY = 'tenantChargesHistory';
 
 // Helper para obtener inquilinos únicos de los pagos
 interface TenantInfo {
@@ -53,7 +40,7 @@ const getUniqueTenants = (payments: PaymentRecord[], charges: ChargeRecord[]): T
 };
 
 const ManagerPayments: React.FC = () => {
-  // allPaymentsHistory almacenará TODOS los pagos de localStorage para la vista del manager
+  // State for payment and charge history
   const [allPaymentsHistory, setAllPaymentsHistory] = useState<PaymentRecord[]>([]);
   const [allChargesHistory, setAllChargesHistory] = useState<ChargeRecord[]>([]); // Para mostrar cargos asignados
 
@@ -72,92 +59,52 @@ const ManagerPayments: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Cargar todo el historial de pagos y cargos.
-  useEffect(() => {
+  const fetchAllData = useCallback(async () => {
     setIsLoading(true);
-    console.log("[ManagerPayments-LoadEffect] Attempting to load all payment history...");
-    const storedPaymentHistory = localStorage.getItem(LOCAL_STORAGE_PAYMENT_HISTORY_KEY);
-    if (storedPaymentHistory) {
-      try {
-        const parsedHistory = JSON.parse(storedPaymentHistory);
-        if (Array.isArray(parsedHistory)) {
-          setAllPaymentsHistory(parsedHistory);
-          console.log("[ManagerPayments-LoadEffect] Successfully loaded all payments:", parsedHistory);
-        } else {
-          console.warn("[ManagerPayments-LoadEffect] Stored payment history is not an array.");
-          setAllPaymentsHistory([]);
-        }
-      } catch (error) {
-        console.error("[ManagerPayments-LoadEffect] Failed to parse stored payment history:", error);
-        setAllPaymentsHistory([]);
-        displayFeedback('error', 'Error al cargar el historial de pagos.');
-      }
-    } else {
-        console.log("[ManagerPayments-LoadEffect] No payment history found in localStorage.");
-        setAllPaymentsHistory([]);
+    try {
+      const [payments, charges] = await Promise.all([
+        getAllPaymentHistory(),
+        getAllCharges()
+      ]);
+      setAllPaymentsHistory(payments);
+      setAllChargesHistory(charges);
+    } catch (error) {
+      console.error("[ManagerPayments] Error fetching data:", error);
+      displayFeedback('error', 'Error al cargar los datos.');
+    } finally {
+      setIsLoading(false);
     }
-
-    console.log("[ManagerPayments-LoadEffect] Attempting to load all charges history...");
-    const storedChargesHistory = localStorage.getItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY);
-    if (storedChargesHistory) {
-      try {
-        const parsedCharges = JSON.parse(storedChargesHistory);
-        if (Array.isArray(parsedCharges)) {
-          setAllChargesHistory(parsedCharges);
-          console.log("[ManagerPayments-LoadEffect] Successfully loaded all charges:", parsedCharges);
-        } else {
-          console.warn("[ManagerPayments-LoadEffect] Stored charges history is not an array.");
-          setAllChargesHistory([]);
-        }
-      } catch (error) {
-        console.error("[ManagerPayments-LoadEffect] Failed to parse stored charges history:", error);
-        setAllChargesHistory([]);
-        displayFeedback('error', 'Error al cargar el historial de cargos.');
-      }
-    } else {
-      console.log("[ManagerPayments-LoadEffect] No charges history found in localStorage.");
-      setAllChargesHistory([]);
-    }
-    setIsLoading(false);
   }, [displayFeedback]);
 
-  const handleRevertPayment = (paymentId: string) => {
-    console.log(`[ManagerPayments] Attempting to revert payment with id: ${paymentId}`);
-    const updatedHistory = allPaymentsHistory.map(payment => {
-      if (payment.id === paymentId) {
-        console.log(`[ManagerPayments] Payment found: ${payment.id}, current status: ${payment.status}. Changing to reverted.`);
-        return { ...payment, status: 'reverted' as 'reverted' };
-      }
-      return payment;
-    });
-    setAllPaymentsHistory(updatedHistory);
-    localStorage.setItem(LOCAL_STORAGE_PAYMENT_HISTORY_KEY, JSON.stringify(updatedHistory));
-    console.log("[ManagerPayments] Payment history updated in state and localStorage after reverting.");
-    displayFeedback('success', 'Pago revertido exitosamente.');
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  const handleRevertPayment = async (paymentId: string) => {
+    try {
+      await updatePaymentStatus(paymentId, 'reverted');
+      await fetchAllData(); // Refetch to get the latest state
+      displayFeedback('success', 'Pago revertido exitosamente.');
+    } catch (error) {
+      console.error("[ManagerPayments] Error reverting payment:", error);
+      displayFeedback('error', 'Error al revertir el pago.');
+    }
   };
 
-  const handleReactivatePayment = (paymentId: string) => {
+  const handleReactivatePayment = async (paymentId: string) => {
     if (window.confirm("¿Está seguro de que desea reactivar este pago? Se marcará como 'completado'.")) {
-      console.log(`[ManagerPayments] Attempting to reactivate payment with id: ${paymentId}`);
-      const updatedHistory = allPaymentsHistory.map(payment => {
-        if (payment.id === paymentId && payment.status === 'reverted') {
-          console.log(`[ManagerPayments] Payment found: ${payment.id}, current status: ${payment.status}. Changing to completed.`);
-          return { ...payment, status: 'completed' as 'completed' };
-        }
-        return payment;
-      });
-      if (JSON.stringify(updatedHistory) !== JSON.stringify(allPaymentsHistory)) {
-        setAllPaymentsHistory(updatedHistory);
-        localStorage.setItem(LOCAL_STORAGE_PAYMENT_HISTORY_KEY, JSON.stringify(updatedHistory));
-        console.log("[ManagerPayments] Payment history updated in state and localStorage after reactivating a payment.");
+      try {
+        await updatePaymentStatus(paymentId, 'completed');
+        await fetchAllData();
         displayFeedback('success', 'Pago reactivado a completado exitosamente.');
-      } else {
-        console.log("[ManagerPayments] No payment was reactivated (either not found or not in 'reverted' state).");
+      } catch (error) {
+        console.error("[ManagerPayments] Error reactivating payment:", error);
+        displayFeedback('error', 'Error al reactivar el pago.');
       }
     }
   };
 
-  const handleAssignCharge = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleAssignCharge = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFeedbackMessage(null);
 
@@ -178,75 +125,52 @@ const ManagerPayments: React.FC = () => {
       return;
     }
 
-    const currentDate = new Date();
     const newCharge: ChargeRecord = {
-      id: `charge-${currentDate.toISOString()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `charge-${new Date().toISOString()}-${Math.random().toString(36).substr(2, 9)}`,
       tenantId: selectedTenantId,
       tenantName: tenant.name,
       amount,
       concept: chargeConcept.trim(),
-      dateAssigned: currentDate.toLocaleDateString('es-ES'),
-      dateAssignedISO: currentDate.toISOString(),
+      dateAssigned: new Date().toLocaleDateString('es-ES'),
+      dateAssignedISO: new Date().toISOString(),
       status: 'pending',
     };
 
     try {
-      const currentCharges = JSON.parse(localStorage.getItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY) || '[]') as ChargeRecord[];
-      const updatedCharges = [newCharge, ...currentCharges];
-      localStorage.setItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY, JSON.stringify(updatedCharges));
-      setAllChargesHistory(updatedCharges);
-      displayFeedback('success', `Cargo de $${amount.toFixed(2)} por "${chargeConcept}" asignado a ${tenant.name}.`);
+      await assignCharge(newCharge);
+      await fetchAllData();
+      displayFeedback('success', `Cargo asignado a ${tenant.name}.`);
       setSelectedTenantId('');
       setChargeAmount('');
       setChargeConcept('');
     } catch (error) {
-      console.error("[ManagerPayments-AssignCharge] Error saving charge:", error);
-      displayFeedback('error', "Error al guardar el cargo. Intente de nuevo.");
+      console.error("[ManagerPayments] Error assigning charge:", error);
+      displayFeedback('error', "Error al guardar el cargo.");
     }
   };
 
-  const handleDeactivateCharge = (chargeId: string) => {
+  const handleDeactivateCharge = async (chargeId: string) => {
     if (window.confirm("¿Está seguro de que desea desactivar este cargo adicional?")) {
-      console.log(`[ManagerPayments] Attempting to deactivate charge with id: ${chargeId}`);
-      const updatedCharges = allChargesHistory.map(charge => {
-        if (charge.id === chargeId && charge.status === 'pending') {
-          console.log(`[ManagerPayments] Charge found: ${charge.id}, current status: ${charge.status}. Changing to deactivated.`);
-          return { ...charge, status: 'deactivated' as 'deactivated' };
-        }
-        return charge;
-      });
-
-      if (JSON.stringify(updatedCharges) !== JSON.stringify(allChargesHistory)) {
-        setAllChargesHistory(updatedCharges);
-        localStorage.setItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY, JSON.stringify(updatedCharges));
-        console.log("[ManagerPayments] Charges history updated in state and localStorage after deactivating a charge.");
+      try {
+        await updateChargeStatus(chargeId, 'deactivated');
+        await fetchAllData();
         displayFeedback('success', "Cargo adicional desactivado exitosamente.");
-      } else {
-        console.log("[ManagerPayments] No charge was deactivated (either not found or not in 'pending' state).");
-        displayFeedback('error', "No se pudo desactivar el cargo (ya está pagado o no se encontró).");
+      } catch (error) {
+        console.error("[ManagerPayments] Error deactivating charge:", error);
+        displayFeedback('error', "No se pudo desactivar el cargo.");
       }
     }
   };
 
-  const handleReactivateCharge = (chargeId: string) => {
+  const handleReactivateCharge = async (chargeId: string) => {
     if (window.confirm("¿Está seguro de que desea reactivar este cargo adicional? Se marcará como 'pendiente'.")) {
-      console.log(`[ManagerPayments] Attempting to reactivate charge with id: ${chargeId}`);
-      const updatedCharges = allChargesHistory.map(charge => {
-        if (charge.id === chargeId && charge.status === 'deactivated') {
-          console.log(`[ManagerPayments] Charge found: ${charge.id}, current status: ${charge.status}. Changing to pending.`);
-          return { ...charge, status: 'pending' as 'pending' };
-        }
-        return charge;
-      });
-
-      if (JSON.stringify(updatedCharges) !== JSON.stringify(allChargesHistory)) {
-        setAllChargesHistory(updatedCharges);
-        localStorage.setItem(LOCAL_STORAGE_CHARGES_HISTORY_KEY, JSON.stringify(updatedCharges));
-        console.log("[ManagerPayments] Charges history updated in state and localStorage after reactivating a charge.");
+      try {
+        await updateChargeStatus(chargeId, 'pending');
+        await fetchAllData();
         displayFeedback('success', "Cargo adicional reactivado a pendiente exitosamente.");
-      } else {
-        console.log("[ManagerPayments] No charge was reactivated (either not found or not in 'deactivated' state).");
-        displayFeedback('error', "No se pudo reactivar el cargo (ya está pagado, pendiente o no se encontró).");
+      } catch (error) {
+        console.error("[ManagerPayments] Error reactivating charge:", error);
+        displayFeedback('error', "No se pudo reactivar el cargo.");
       }
     }
   };
@@ -260,40 +184,9 @@ const ManagerPayments: React.FC = () => {
     return <div className="loading-container"><p>Cargando datos de pagos...</p></div>;
   }
 
-  const cardStyle: React.CSSProperties = {
-    backgroundColor: 'var(--bg-secondary, #13131a)',
-    padding: '1.5rem 2rem',
-    borderRadius: '0.75rem',
-    border: '1px solid var(--border-secondary, #3f3f46)',
-    boxShadow: 'var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.4))',
-    marginBottom: '2rem',
-  };
-
-  const cardTitleStyle: React.CSSProperties = {
-    fontSize: '1.3rem',
-    color: 'var(--text-primary)',
-    marginBottom: '1.5rem',
-    borderBottom: '1px solid var(--border-secondary, #3f3f46)',
-    paddingBottom: '0.75rem',
-  };
-
-  const inputStyle: React.CSSProperties = {
-    backgroundColor: 'var(--bg-tertiary, #1a1a24)',
-    color: 'var(--text-primary)',
-    border: '1px solid var(--border-secondary, #3f3f46)',
-    borderRadius: '0.5rem',
-    padding: '0.75rem 1rem',
-  };
-  
-  const labelStyle: React.CSSProperties = {
-    color: 'var(--text-secondary)',
-    marginBottom: '0.5rem',
-    fontSize: '0.9rem',
-  };
-
   return (
     <div className="manager-payments-container" style={{ padding: 'var(--spacing-lg)' }}>
-      <h2 className="page-title">Gestión de Pagos y Cargos</h2>
+      <h2 style={{ fontSize: '1.8rem', color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Gestión de Pagos y Cargos</h2>
 
       {/* Mensaje de Feedback Global */}
       {feedbackMessage && (

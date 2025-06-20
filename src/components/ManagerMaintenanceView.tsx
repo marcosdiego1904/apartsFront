@@ -1,38 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import '../styles/globalStyles.css'; // Assuming globalStyles.css contains the dark theme
+import { FiEye, FiEdit, FiX, FiInfo, FiUser, FiHome, FiTool, FiHash, FiStar, FiMessageSquare, FiPaperclip } from 'react-icons/fi';
 import './ManagerMaintenanceView.css'; // Import the new CSS file
-
-// Interface for data loaded from localStorage (from tenant's form)
-interface TenantRequestDisplayItem {
-  id: string;
-  title: string; // This will become the manager's "description"
-  category: 'plumbing' | 'electrical' | 'appliance' | 'general' | '';
-  dateSubmitted: string;
-  status: 'sent' | 'in-progress' | 'completed' | 'cancelled'; // Tenant status
-  description: string; // This will become the manager's "fullDescription"
-  urgency: 'low' | 'medium' | 'high' | '';
-  tenantRating?: number; // New field
-  tenantComment?: string; // New field
-  isRatingSubmitted?: boolean; // New field
-}
-
-// Interface for manager's view
-interface MaintenanceRequest {
-  id: string;
-  tenantName: string; // Will be placeholder for now
-  unit: string; // Will be placeholder for now
-  category: string; // Transformed from tenant's category
-  description: string; // Brief description (from tenant's title)
-  fullDescription: string; // Detailed description (from tenant's description)
-  dateSubmitted: string;
-  status: 'Pendiente' | 'En Progreso' | 'Completado' | 'Rechazado'; // Manager status
-  priority: 'Alta' | 'Media' | 'Baja'; // Transformed from tenant's urgency
-  assignedTo?: string; // New field
-  managerComments?: string; // New field
-  tenantRating?: number; // New field
-  tenantComment?: string; // New field
-  isRatingSubmitted?: boolean; // New field
-}
+import { getManagedRequests, updateManagedRequest } from '../services/maintenanceService';
+import type { MaintenanceRequest } from '../services/MockBackendService';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -43,46 +13,6 @@ interface SortConfig {
   key: SortableKeys | null;
   direction: SortDirection;
 }
-
-// Helper function to transform tenant request to manager request
-const transformTenantRequest = (tenantRequest: TenantRequestDisplayItem): MaintenanceRequest => {
-  let managerCategory = '';
-  switch (tenantRequest.category) {
-    case 'plumbing': managerCategory = 'Plomería'; break;
-    case 'electrical': managerCategory = 'Electricidad'; break;
-    case 'appliance': managerCategory = 'Electrodomésticos'; break;
-    case 'general': managerCategory = 'General'; break;
-    default: managerCategory = 'Desconocida';
-  }
-
-  let managerPriority: MaintenanceRequest['priority'] = 'Baja';
-  switch (tenantRequest.urgency) {
-    case 'high': managerPriority = 'Alta'; break;
-    case 'medium': managerPriority = 'Media'; break;
-    case 'low': managerPriority = 'Baja'; break;
-  }
-
-  const tenantName = "Inquilino Ejemplo"; // Placeholder
-  const unitNumber = `Apt ${(Math.floor(Math.random() * 10) + 1)}${['A', 'B', 'C', 'D', 'E', 'F'][Math.floor(Math.random() * 6)]}`; // Placeholder
-
-  return {
-    id: tenantRequest.id,
-    tenantName: tenantName,
-    unit: unitNumber,
-    category: managerCategory,
-    description: tenantRequest.title,
-    fullDescription: tenantRequest.description,
-    dateSubmitted: tenantRequest.dateSubmitted,
-    status: 'Pendiente',
-    priority: managerPriority,
-    assignedTo: '', // Initialize new field
-    managerComments: '', // Initialize new field
-    tenantRating: tenantRequest.tenantRating, // Copy rating
-    tenantComment: tenantRequest.tenantComment, // Copy comment
-    isRatingSubmitted: tenantRequest.isRatingSubmitted, // Copy the flag
-  };
-};
-
 
 const ManagerMaintenanceView: React.FC = () => {
   const [allRawRequests, setAllRawRequests] = useState<MaintenanceRequest[]>([]);
@@ -113,58 +43,24 @@ const ManagerMaintenanceView: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Load and merge data from localStorage
-  useEffect(() => {
+  const fetchAndSetRequests = useCallback(async () => {
     setIsLoading(true);
-    console.log("[ManagerMaintenanceView-LoadEffect] Attempting to load requests...");
     try {
-      const savedManagedRequestsJSON = localStorage.getItem('managedMaintenanceRequests');
-      let managedRequests: MaintenanceRequest[] = savedManagedRequestsJSON ? JSON.parse(savedManagedRequestsJSON) : [];
-
-      const savedTenantRequestsJSON = localStorage.getItem('tenantSubmittedMaintenanceRequests');
-      const tenantSubmittedItems: TenantRequestDisplayItem[] = savedTenantRequestsJSON ? JSON.parse(savedTenantRequestsJSON) : [];
-      
-      const tenantFeedbackMap = new Map<string, { tenantRating?: number; tenantComment?: string; isRatingSubmitted?: boolean }>();
-      tenantSubmittedItems.forEach(item => {
-        if (item.isRatingSubmitted || item.tenantRating !== undefined || item.tenantComment !== undefined) {
-          tenantFeedbackMap.set(item.id, { 
-            tenantRating: item.tenantRating, 
-            tenantComment: item.tenantComment, 
-            isRatingSubmitted: item.isRatingSubmitted 
-          });
-        }
-      });
-
-      managedRequests = managedRequests.map(managedReq => {
-        const feedback = tenantFeedbackMap.get(managedReq.id);
-        if (feedback && (
-            managedReq.tenantRating !== feedback.tenantRating || 
-            managedReq.tenantComment !== feedback.tenantComment || 
-            managedReq.isRatingSubmitted !== feedback.isRatingSubmitted
-        )) {
-          return { ...managedReq, ...feedback };
-        }
-        return managedReq;
-      });
-
-      const managedRequestIds = new Set(managedRequests.map(req => req.id));
-      const newTransformedRequests = tenantSubmittedItems
-        .filter(tenantItem => !managedRequestIds.has(tenantItem.id))
-        .map(transformTenantRequest);
-      
-      const combinedRequests = [...managedRequests, ...newTransformedRequests];
-      localStorage.setItem('managedMaintenanceRequests', JSON.stringify(combinedRequests));
-      setAllRawRequests(combinedRequests);
-      setCurrentPage(1);
-      console.log("[ManagerMaintenanceView-LoadEffect] Loaded and merged requests:", combinedRequests);
+      const requests = await getManagedRequests();
+      setAllRawRequests(requests);
     } catch (error) {
-      console.error("[ManagerMaintenanceView-LoadEffect] Error loading or processing requests:", error);
+      console.error("[ManagerMaintenanceView] Error fetching requests:", error);
       displayFeedback('error', 'Error al cargar las solicitudes de mantenimiento.');
       setAllRawRequests([]);
     } finally {
       setIsLoading(false);
     }
   }, [displayFeedback]);
+
+  // Load data on component mount
+  useEffect(() => {
+    fetchAndSetRequests();
+  }, [fetchAndSetRequests]);
 
 
   // Effect for filtering and sorting
@@ -222,15 +118,15 @@ const ManagerMaintenanceView: React.FC = () => {
       });
     }
     setProcessedRequests(filtered);
-    if (currentPage !== 1 && filtered.length > 0) { // Avoid resetting if already on page 1 or no results
+    if (currentPage !== 1 && filtered.length > 0) {
         const newTotalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
         if (currentPage > newTotalPages) {
-            setCurrentPage(newTotalPages || 1); // Go to last page if current is out of bounds
+            setCurrentPage(newTotalPages || 1);
         }
     } else if (filtered.length === 0) {
-        setCurrentPage(1); // Reset to page 1 if no results
+        setCurrentPage(1);
     } else {
-        setCurrentPage(1); // Default reset to page 1 for other cases (e.g. initial load)
+        setCurrentPage(1);
     }
   }, [allRawRequests, filterStatus, filterPriority, searchTerm, sortConfig, currentPage]);
 
@@ -298,17 +194,23 @@ const ManagerMaintenanceView: React.FC = () => {
     setEditingRequest(null);
   };
   
-  const handleSaveEditModal = (updatedRequest: MaintenanceRequest) => {
-    const updatedAllRawRequests = allRawRequests.map(req => 
-      req.id === updatedRequest.id ? updatedRequest : req
-    );
-    setAllRawRequests(updatedAllRawRequests);
-    localStorage.setItem('managedMaintenanceRequests', JSON.stringify(updatedAllRawRequests));
-    displayFeedback('success', 'Solicitud actualizada exitosamente.');
-    handleCloseEditModal();
+  const handleSaveEditModal = async (updatedRequest: MaintenanceRequest) => {
+    setIsLoading(true);
+    try {
+      await updateManagedRequest(updatedRequest);
+      await fetchAndSetRequests();
+      displayFeedback('success', `Solicitud ${updatedRequest.id} actualizada con éxito.`);
+    } catch (error) {
+      console.error("Error updating request:", error);
+      displayFeedback('error', `Error al actualizar la solicitud ${updatedRequest.id}.`);
+    } finally {
+      setIsLoading(false);
+      setIsEditModalOpen(false);
+      setEditingRequest(null);
+    }
   };
 
-  if (isLoading) {
+  if (isLoading && !allRawRequests.length) {
     return (
       <div style={{ padding: 'var(--spacing-xl, 24px)', textAlign: 'center', fontSize: '1.1rem', color: 'var(--color-text-secondary, #555)' }}>
         <p>Cargando solicitudes de mantenimiento, por favor espere...</p>
@@ -335,209 +237,108 @@ const ManagerMaintenanceView: React.FC = () => {
         </div>
       )}
 
-      {/* Filtros y Búsqueda */}
       <div className="dashboard-card" style={{ marginBottom: 'var(--spacing-xl)' }}>
         <div className="card-header">
           <h3 className="card-title">Filtros y Búsqueda</h3>
         </div>
         <div className="card-content">
-          <div className="form-grid form-grid-cols-3"> {/* Usando form-grid para alinear */}
+          <div className="form-grid form-grid-cols-3">
             <div className="form-group">
               <label htmlFor="statusFilter" className="form-label">Estado:</label>
-              <select 
-                id="statusFilter" 
-                className="form-select" 
-                value={filterStatus} 
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
+              <select id="statusFilter" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="form-control">
                 <option value="all">Todos</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="enprogreso">En Progreso</option>
-                <option value="completado">Completado</option>
-                <option value="rechazado">Rechazado</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="En Progreso">En Progreso</option>
+                <option value="Completado">Completado</option>
+                <option value="Rechazado">Rechazado</option>
               </select>
             </div>
             <div className="form-group">
               <label htmlFor="priorityFilter" className="form-label">Prioridad:</label>
-              <select 
-                id="priorityFilter" 
-                className="form-select" 
-                value={filterPriority} 
-                onChange={(e) => setFilterPriority(e.target.value)}
-              >
+              <select id="priorityFilter" value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} className="form-control">
                 <option value="all">Todas</option>
-                <option value="alta">Alta</option>
-                <option value="media">Media</option>
-                <option value="baja">Baja</option>
+                <option value="Alta">Alta</option>
+                <option value="Media">Media</option>
+                <option value="Baja">Baja</option>
               </select>
             </div>
             <div className="form-group">
               <label htmlFor="searchTerm" className="form-label">Buscar:</label>
-              <input 
-                type="text" 
-                id="searchTerm" 
-                className="form-input" 
-                placeholder="ID, inquilino, descripción..." 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
+              <input
+                type="text"
+                id="searchTerm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="form-control"
+                placeholder="Buscar por inquilino, unidad, etc."
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabla de Solicitudes */}
       <div className="dashboard-card">
         <div className="card-header">
-          <h3 className="card-title">Listado de Solicitudes ({processedRequests.length} encontradas)</h3>
+          <h3 className="card-title">Lista de Solicitudes</h3>
         </div>
         <div className="card-content">
-          {displayedRequests.length > 0 ? (
-            <div className="table-container">
-              <table className="table table-hover"> {/* Added table-hover for better UX */}
-                <thead>
-                  <tr>
-                    <th onClick={() => requestSort('id')} className="sortable-header">
-                      ID Solicitud{getSortIndicator('id')}
-                    </th>
-                    <th onClick={() => requestSort('dateSubmitted')} className="sortable-header">
-                      Fecha Envío{getSortIndicator('dateSubmitted')}
-                    </th>
-                    <th onClick={() => requestSort('tenantName')} className="sortable-header">
-                      Inquilino{getSortIndicator('tenantName')}
-                    </th>
-                    <th onClick={() => requestSort('unit')} className="sortable-header">
-                      Unidad{getSortIndicator('unit')}
-                    </th>
-                    <th onClick={() => requestSort('category')} className="sortable-header">
-                      Categoría{getSortIndicator('category')}
-                    </th>
-                    <th>Descripción Breve</th>
-                    <th onClick={() => requestSort('priority')} className="sortable-header">
-                      Prioridad{getSortIndicator('priority')}
-                    </th>
-                    <th onClick={() => requestSort('status')} className="sortable-header">
-                      Estado{getSortIndicator('status')}
-                    </th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayedRequests.map((req) => (
-                    <tr key={req.id} style={{backgroundColor: 'var(--bg-tertiary)', borderBottom: '1px solid var(--border-primary)'}}>
-                      <td data-label="ID Solicitud" style={{color: 'var(--text-primary)', padding: '0.85rem 1rem'}}>{req.id}</td>
-                      <td data-label="Fecha Envío" style={{color: 'var(--text-primary)', padding: '0.85rem 1rem'}}>{new Date(req.dateSubmitted).toLocaleDateString()}</td>
-                      <td data-label="Inquilino" style={{color: 'var(--text-primary)', padding: '0.85rem 1rem'}}>{req.tenantName}</td>
-                      <td data-label="Unidad" style={{color: 'var(--text-primary)', padding: '0.85rem 1rem'}}>{req.unit}</td>
-                      <td data-label="Categoría" style={{color: 'var(--text-primary)', padding: '0.85rem 1rem'}}>{req.category}</td>
-                      <td data-label="Descripción Breve" style={{color: 'var(--text-primary)', padding: '0.85rem 1rem', maxWidth: '250px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={req.description}>{req.description}</td>
-                      <td data-label="Prioridad" style={{padding: '0.85rem 1rem'}}>
-                        <span className={getPriorityClass(req.priority)}>{req.priority}</span>
-                      </td>
-                      <td data-label="Estado" style={{padding: '0.85rem 1rem'}}>
-                        <span className={getStatusClass(req.status)}>{req.status}</span>
-                      </td>
-                      <td data-label="Acciones" style={{padding: '0.85rem 1rem', whiteSpace: 'nowrap'}}>
-                        <button 
-                          className="btn-icon"
-                          style={{
-                              background: 'var(--accent-info)',
-                              color: 'white',
-                              marginRight: '0.5rem',
-                              padding: '0.5rem',
-                              borderRadius: '0.375rem',
-                              border: 'none',
-                              cursor: 'pointer'
-                          }}
-                          title={`Ver Detalles: ${req.fullDescription}`}
-                          onClick={() => handleOpenViewModal(req)}
-                        >
-                          <span role="img" aria-label="view">👁️</span>
-                        </button>
-                        <button 
-                          className="btn-icon" 
-                          style={{
-                              background: 'var(--accent-warning)',
-                              color: 'white',
-                              padding: '0.5rem',
-                              borderRadius: '0.375rem',
-                              border: 'none',
-                              cursor: 'pointer'
-                          }}
-                          title="Modificar Estado (Implementar)"
-                          onClick={() => handleOpenEditModal(req)}
-                        >
-                          <span role="img" aria-label="edit">✏️</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="table-wrapper">
+            {isLoading && <div className="loading-overlay"><p>Actualizando datos...</p></div>}
+            <div className="table-responsive">
+              {processedRequests.length === 0 && !isLoading ? (
+                <div className="empty-state">
+                  <p>No hay solicitudes que coincidan con los filtros actuales.</p>
+                </div>
+              ) : (
+                <div className="table-container">
+                  <table className="table table-hover">
+                    <thead>
+                      <tr>
+                        <th onClick={() => requestSort('id')}>ID {getSortIndicator('id')}</th>
+                        <th onClick={() => requestSort('tenantName')}>Inquilino {getSortIndicator('tenantName')}</th>
+                        <th onClick={() => requestSort('unit')}>Unidad {getSortIndicator('unit')}</th>
+                        <th onClick={() => requestSort('category')}>Categoría {getSortIndicator('category')}</th>
+                        <th onClick={() => requestSort('priority')}>Prioridad {getSortIndicator('priority')}</th>
+                        <th onClick={() => requestSort('status')}>Estado {getSortIndicator('status')}</th>
+                        <th onClick={() => requestSort('dateSubmitted')}>Fecha {getSortIndicator('dateSubmitted')}</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayedRequests.map(request => (
+                        <tr key={request.id}>
+                          <td data-label="ID">{request.id}</td>
+                          <td data-label="Inquilino">{request.tenantName}</td>
+                          <td data-label="Unidad">{request.unit}</td>
+                          <td data-label="Categoría">{request.category}</td>
+                          <td data-label="Prioridad"><span className={getPriorityClass(request.priority)}>{request.priority}</span></td>
+                          <td data-label="Estado"><span className={getStatusClass(request.status)}>{request.status}</span></td>
+                          <td data-label="Fecha">{new Date(request.dateSubmitted).toLocaleDateString()}</td>
+                          <td data-label="Acciones" className="actions-cell">
+                            <button onClick={() => handleOpenViewModal(request)} className="btn-icon" title="Ver Detalles">
+                              <FiEye />
+                            </button>
+                            <button onClick={() => handleOpenEditModal(request)} className="btn-icon btn-edit" title="Editar Solicitud">
+                              <FiEdit />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          ) : (
-            <p className="text-center text-muted" style={{padding: 'var(--spacing-lg)'}}>
-              {allRawRequests.length === 0 && !searchTerm && filterStatus === 'all' && filterPriority === 'all' 
-                ? "No hay solicitudes de mantenimiento registradas." 
-                : "No se encontraron solicitudes con los filtros aplicados."}
-            </p>
-          )}
+          </div>
           {totalPages > 1 && (
-            <div className="pagination-controls" style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              padding: '1.5rem 0',
-              gap: '0.5rem',
-            }}>
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="btn btn-secondary"
-                style={{ 
-                    minWidth: 'auto', 
-                    padding: '0.5rem 0.8rem',
-                    backgroundColor: currentPage === 1 ? 'var(--bg-tertiary)' : 'var(--bg-hover)',
-                    color: currentPage === 1 ? 'var(--text-tertiary)' : 'var(--text-primary)',
-                    borderColor: 'var(--border-primary)',
-                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-                 }}
-              >
+            <div className="pagination-container">
+              <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="pagination-button">
                 Anterior
               </button>
-
-              {Array.from({ length: totalPages }, (_, index) => (
-                <button
-                  key={index}
-                  onClick={() => handlePageChange(index + 1)}
-                  className="btn btn-secondary"
-                  style={{
-                    minWidth: 'auto',
-                    padding: '0.5rem 0.8rem',
-                    backgroundColor: currentPage === index + 1 ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
-                    color: currentPage === index + 1 ? 'white' : 'var(--text-primary)',
-                    borderColor: currentPage === index + 1 ? 'var(--accent-primary)' : 'var(--border-primary)',
-                    fontWeight: currentPage === index + 1 ? 'bold' : 'normal',
-                    cursor: currentPage === index + 1 ? 'default' : 'pointer',
-                  }}
-                >
-                  {index + 1}
-                </button>
-              ))}
-
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="btn btn-secondary"
-                style={{ 
-                    minWidth: 'auto',
-                    padding: '0.5rem 0.8rem',
-                    backgroundColor: currentPage === totalPages ? 'var(--bg-tertiary)' : 'var(--bg-hover)',
-                    color: currentPage === totalPages ? 'var(--text-tertiary)' : 'var(--text-primary)',
-                    borderColor: 'var(--border-primary)',
-                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-                }}
-              >
+              <span className="pagination-info">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="pagination-button">
                 Siguiente
               </button>
             </div>
@@ -545,193 +346,157 @@ const ManagerMaintenanceView: React.FC = () => {
         </div>
       </div>
 
-      {/* Edit Modal */}
       {isEditModalOpen && editingRequest && (
-        <div className="modal-backdrop-custom" onClick={handleCloseEditModal}>
-          <div className="modal-content-custom" onClick={e => e.stopPropagation()}>
-            <div className="modal-header-custom">
-              <h2 className="modal-title-custom">
-                Editar Solicitud: {editingRequest.id}
-              </h2>
-              <button onClick={handleCloseEditModal} className="modal-close-btn-custom">&times;</button>
-            </div>
-            
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const form = e.target as HTMLFormElement;
-              const updatedReq: MaintenanceRequest = {
-                ...editingRequest, 
-                status: (form.elements.namedItem('status') as HTMLSelectElement).value as MaintenanceRequest['status'],
-                priority: (form.elements.namedItem('priority') as HTMLSelectElement).value as MaintenanceRequest['priority'],
-                assignedTo: (form.elements.namedItem('assignedTo') as HTMLInputElement).value,
-                managerComments: (form.elements.namedItem('managerComments') as HTMLTextAreaElement).value,
-                tenantRating: editingRequest.tenantRating, 
-                tenantComment: editingRequest.tenantComment,
-                isRatingSubmitted: editingRequest.isRatingSubmitted,
-              };
-              handleSaveEditModal(updatedReq);
-            }}>
-              <div className="modal-body-custom">
-                <div className="form-group">
-                  <label htmlFor="status" className="form-label">Estado:</label>
-                  <select 
-                    id="status" 
-                    name="status" 
-                    defaultValue={editingRequest.status} 
-                    className="form-select" 
-                  >
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="En Progreso">En Progreso</option>
-                    <option value="Completado">Completado</option>
-                    <option value="Rechazado">Rechazado</option>
-                  </select>
-                </div>
+        <div className="modal-backdrop active">
+          <div className="modal-content" style={{ maxWidth: '650px' }}>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveEditModal(editingRequest); }}>
+              <div className="modal-header">
+                <h3 className="modal-title">
+                  <FiEdit /> Editar Solicitud de Mantenimiento
+                </h3>
+                <button type="button" onClick={handleCloseEditModal} className="modal-close-btn">
+                  <FiX />
+                </button>
+              </div>
 
-                <div className="form-group">
-                  <label htmlFor="priority" className="form-label">Prioridad:</label>
-                  <select 
-                    id="priority" 
-                    name="priority" 
-                    defaultValue={editingRequest.priority} 
-                    className="form-select" 
-                  >
-                    <option value="Alta">Alta</option>
-                    <option value="Media">Media</option>
-                    <option value="Baja">Baja</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="assignedTo" className="form-label">Asignado A:</label>
-                  <input 
-                    type="text" 
-                    id="assignedTo" 
-                    name="assignedTo"
-                    defaultValue={editingRequest.assignedTo || ''} 
-                    className="form-input" 
-                    placeholder="Ej: José (Plomero)"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="managerComments" className="form-label">Comentarios del Gestor:</label>
-                  <textarea 
-                    id="managerComments" 
-                    name="managerComments"
-                    defaultValue={editingRequest.managerComments || ''} 
-                    className="form-textarea" 
-                    rows={5} 
-                    placeholder="Añadir notas internas o para el inquilino..."
-                  />
+              <div className="modal-body">
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label htmlFor="edit-status" className="form-label">Estado:</label>
+                    <select
+                      id="edit-status"
+                      className="form-control"
+                      value={editingRequest.status}
+                      onChange={(e) => setEditingRequest({ ...editingRequest, status: e.target.value as MaintenanceRequest['status'] })}
+                    >
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="En Progreso">En Progreso</option>
+                      <option value="Completado">Completado</option>
+                      <option value="Rechazado">Rechazado</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="edit-priority" className="form-label">Prioridad:</label>
+                    <select
+                      id="edit-priority"
+                      className="form-control"
+                      value={editingRequest.priority}
+                      onChange={(e) => setEditingRequest({ ...editingRequest, priority: e.target.value as MaintenanceRequest['priority'] })}
+                    >
+                      <option value="Baja">Baja</option>
+                      <option value="Media">Media</option>
+                      <option value="Alta">Alta</option>
+                    </select>
+                  </div>
+                  <div className="form-group full-width">
+                    <label htmlFor="edit-assigned" className="form-label">Asignado a:</label>
+                    <input
+                      type="text"
+                      id="edit-assigned"
+                      className="form-control"
+                      value={editingRequest.assignedTo || ''}
+                      onChange={(e) => setEditingRequest({ ...editingRequest, assignedTo: e.target.value })}
+                      placeholder="Ej: Equipo de fontanería"
+                    />
+                  </div>
+                  <div className="form-group full-width">
+                    <label htmlFor="edit-comments" className="form-label">Comentarios del Administrador:</label>
+                    <textarea
+                      id="edit-comments"
+                      className="form-control"
+                      rows={4}
+                      value={editingRequest.managerComments || ''}
+                      onChange={(e) => setEditingRequest({ ...editingRequest, managerComments: e.target.value })}
+                      placeholder="Añadir notas internas sobre el progreso o la resolución..."
+                    ></textarea>
+                  </div>
                 </div>
               </div>
 
-              <div className="modal-footer-custom">
-                <button type="button" onClick={handleCloseEditModal} className="btn btn-secondary">
-                  Cancelar
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Guardar Cambios
-                </button>
+              <div className="modal-footer">
+                <button type="button" onClick={handleCloseEditModal} className="btn btn-secondary">Cancelar</button>
+                <button type="submit" className="btn btn-primary">Guardar Cambios</button>
               </div>
             </form>
-
           </div>
         </div>
       )}
 
-      {/* View Details Modal */}
       {isViewModalOpen && viewingRequest && (
-        <div className="modal-backdrop" onClick={() => setIsViewModalOpen(false)} style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex',
-          justifyContent: 'center', alignItems: 'center', zIndex: 1050
-        }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{
-            background: 'var(--bg-card, #2c2c3e)',
-            padding: '2rem',
-            borderRadius: '1rem',
-            boxShadow: 'var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.5))',
-            minWidth: '500px',
-            maxWidth: '700px',
-            border: '1px solid var(--border-primary, #3f3f46)',
-            color: 'var(--text-primary, #f0f0f0)',
-            maxHeight: '80vh',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-secondary, #555)', paddingBottom: '1rem', flexShrink: 0 }}>
-              <h2 style={{ marginTop: 0, marginBottom: 0, fontSize: '1.5em' }}>
-                Detalles Solicitud: {viewingRequest.id}
-              </h2>
-              <button onClick={() => setIsViewModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary, #aaa)', fontSize: '1.8rem', cursor: 'pointer', lineHeight: 1, padding: '0.25rem 0.5rem' }}>
-                &times;
+        <div className="modal-backdrop active">
+          <div className="modal-content" style={{ maxWidth: '650px' }}>
+
+            <div className="modal-header">
+              <h3 className="modal-title">
+                <FiInfo /> Detalles de la Solicitud
+              </h3>
+              <button onClick={() => setIsViewModalOpen(false)} className="modal-close-btn">
+                <FiX />
               </button>
             </div>
+            
+            <div className="modal-body">
+              <div className="view-request-grid">
 
-            <div style={{ flexGrow: 1, overflowY: 'auto', paddingRight: '1rem', marginRight: '-1rem'}}> {/* Scrollable content area */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, auto) 1fr', gap: '0.8rem 1.5rem', marginBottom: '1.5rem' }}>
-                {[
-                  { label: 'Inquilino', value: viewingRequest.tenantName },
-                  { label: 'Unidad', value: viewingRequest.unit },
-                  { label: 'Categoría', value: viewingRequest.category },
-                  { label: 'Prioridad', value: <span className={getPriorityClass(viewingRequest.priority)}>{viewingRequest.priority}</span> },
-                  { label: 'Fecha Envío', value: new Date(viewingRequest.dateSubmitted).toLocaleDateString() },
-                  { label: 'Estado', value: <span className={getStatusClass(viewingRequest.status)}>{viewingRequest.status}</span> },
-                  { label: 'Asignado a', value: viewingRequest.assignedTo || 'N/A' },
-                ].map(item => (
-                  <React.Fragment key={item.label}>
-                    <strong style={{ color: 'var(--text-secondary, #aaa)', textAlign: 'right' }}>{item.label}:</strong>
-                    <div>{item.value}</div>
-                  </React.Fragment>
-                ))}
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <strong style={{ color: 'var(--text-secondary, #aaa)', display: 'block', marginBottom: '0.5rem' }}>Comentarios del Gestor:</strong>
-                <div style={{ background: 'var(--bg-tertiary, #222)', padding: '0.75rem 1rem', borderRadius: '0.5rem', margin: 0, minHeight: '60px', whiteSpace: 'pre-wrap', overflowWrap: 'break-word' }}>
-                  {viewingRequest.managerComments || 'N/A'}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <strong style={{ color: 'var(--text-secondary, #aaa)', display: 'block', marginBottom: '0.5rem' }}>Descripción Completa (Inquilino):</strong>
-                <div style={{ background: 'var(--bg-tertiary, #222)', padding: '0.75rem 1rem', borderRadius: '0.5rem', margin: 0, minHeight: '80px', whiteSpace: 'pre-wrap', overflowWrap: 'break-word' }}>
-                  {viewingRequest.fullDescription}
-                </div>
-              </div>
-              
-              {viewingRequest.isRatingSubmitted && (
-                <div style={{ borderTop: '1px solid var(--border-secondary, #555)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
-                  <h3 style={{ color: 'var(--text-primary, #f0f0f0)', marginBottom: '1rem', fontSize: '1.2em' }}>-- Valoración del Inquilino --</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, auto) 1fr', gap: '0.8rem 1.5rem' }}>
-                    <strong style={{ color: 'var(--text-secondary, #aaa)', textAlign: 'right' }}>Calificación:</strong>
-                    <div>{viewingRequest.tenantRating ? `${viewingRequest.tenantRating} estrellas` : 'No valorado'}</div>
-                    
-                    <strong style={{ color: 'var(--text-secondary, #aaa)', textAlign: 'right' }}>Comentario:</strong>
-                    <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'break-word'}}>{viewingRequest.tenantComment || 'Sin comentarios'}</div>
+                <div className="detail-card">
+                  <div className="detail-card-header">
+                    <FiUser />
+                    <h4>Información del Inquilino</h4>
+                  </div>
+                  <div className="detail-card-body">
+                    <p><strong>ID de Solicitud:</strong> <span>{viewingRequest.id}</span></p>
+                    <p><strong>Inquilino:</strong> <span>{viewingRequest.tenantName}</span></p>
+                    <p><strong>Unidad:</strong> <span>{viewingRequest.unit}</span></p>
+                    <p><strong>Fecha de Envío:</strong> <span>{new Date(viewingRequest.dateSubmitted).toLocaleString()}</span></p>
                   </div>
                 </div>
-              )}
-            </div>
 
-            <div style={{ marginTop: '1.5rem', textAlign: 'right', borderTop: '1px solid var(--border-secondary, #555)', paddingTop: '1rem', flexShrink: 0 }}>
-              <button 
-                onClick={() => setIsViewModalOpen(false)} 
-                className="btn" 
-                style={{ 
-                  backgroundColor: 'var(--accent-secondary, #8b5cf6)', 
-                  color: 'white', 
-                  padding: '0.7rem 1.3rem',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Cerrar
-              </button>
+                <div className="detail-card">
+                  <div className="detail-card-header">
+                    <FiTool />
+                    <h4>Detalles de la Solicitud</h4>
+                  </div>
+                  <div className="detail-card-body">
+                    <p><strong>Categoría:</strong> <span>{viewingRequest.category}</span></p>
+                    <p><strong>Prioridad:</strong> <span className={getPriorityClass(viewingRequest.priority)}>{viewingRequest.priority}</span></p>
+                    <p><strong>Estado:</strong> <span className={getStatusClass(viewingRequest.status)}>{viewingRequest.status}</span></p>
+                    <p><strong>Asignado a:</strong> <span>{viewingRequest.assignedTo || 'N/A'}</span></p>
+                  </div>
+                </div>
+
+                <div className="detail-card full-span">
+                   <div className="detail-card-header">
+                    <FiMessageSquare />
+                    <h4>Descripción</h4>
+                  </div>
+                  <div className="detail-card-body">
+                    <p>{viewingRequest.fullDescription}</p>
+                  </div>
+                </div>
+
+                <div className="detail-card full-span">
+                   <div className="detail-card-header">
+                    <FiMessageSquare />
+                    <h4>Comentarios del Administrador</h4>
+                  </div>
+                  <div className="detail-card-body">
+                    <p>{viewingRequest.managerComments || 'Sin comentarios.'}</p>
+                  </div>
+                </div>
+
+                 <div className="detail-card full-span">
+                   <div className="detail-card-header">
+                    <FiStar />
+                    <h4>Feedback del Inquilino</h4>
+                  </div>
+                  <div className="detail-card-body">
+                     <p><strong>Rating:</strong> <span>{viewingRequest.tenantRating ? `${'★'.repeat(viewingRequest.tenantRating)}${'☆'.repeat(5 - viewingRequest.tenantRating)}` : 'No calificado'}</span></p>
+                     <p><strong>Comentarios:</strong> <span>{viewingRequest.tenantComment || 'Sin comentarios.'}</span></p>
+                  </div>
+                </div>
+              </div>
             </div>
+            
           </div>
         </div>
       )}

@@ -771,20 +771,25 @@ body {
 /* Form Styles */
 .form-grid {
   display: grid;
-  gap: 20px; /* Espaciado entre campos en un grid */
+  gap: 1.25rem;
 }
 
 .form-grid-cols-2 {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-grid-condensed {
+  gap: 0.85rem; /* Un gap más pequeño para formularios densos */
 }
 
 .form-group {
-  margin-bottom: 20px; /* Espaciado entre grupos de formularios */
+  display: flex;
+  flex-direction: column;
 }
 
 .form-label {
+  margin-bottom: 0.35rem; /* Reducir espacio entre label e input */
   display: block;
-  margin-bottom: 8px;
   font-weight: 500;
   color: var(--color-text-primary, #374151);
   font-size: 0.9em;
@@ -1718,4 +1723,49 @@ body {
   padding: var(--spacing-xl, 24px);
   color: var(--color-text-secondary, #6B7280);
   font-style: italic;
+}
+.form-input.is-invalid {
+  border-color: var(--color-error);
+}
+
+.invalid-feedback {
+  color: var(--color-error-dark);
+  font-size: 0.875em;
+  margin-top: var(--spacing-xxs);
+}
+
+/* Estilos para el nuevo botón de Reset Demo */
+.reset-demo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs, 8px);
+  padding: var(--spacing-xs, 8px) var(--spacing-sm, 12px);
+  font-family: var(--font-family-sans, 'Inter', sans-serif);
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--border-radius-md, 8px);
+  cursor: pointer;
+  transition: all var(--transition-duration, 0.2s) var(--transition-timing, ease-in-out);
+  white-space: nowrap;
+  
+  /* Estilo "outline" sutil por defecto */
+  background-color: transparent;
+  color: var(--color-text-secondary, #6B7280);
+  border: 1px solid var(--color-border-medium, #D1D5DB);
+}
+
+.reset-demo-button svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.reset-demo-button:hover {
+  /* Se rellena en rojo al pasar el ratón para indicar acción peligrosa */
+  background-color: var(--color-error, #EF4444);
+  color: var(--color-text-on-primary, #FFFFFF);
+  border-color: var(--color-error, #EF4444);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }

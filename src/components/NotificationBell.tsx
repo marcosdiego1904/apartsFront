@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './NotificationBell.css'; // We'll create this CSS file next
 
 interface NotificationBellProps {

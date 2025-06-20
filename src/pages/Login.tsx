@@ -6,6 +6,12 @@ import { Buttons } from '../components/Buttons';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getDemoCredentials } from '../services/authService';
+import type { User } from '../types';
+
+interface DemoCredential {
+  user: User | undefined;
+  password?: string;
+}
 
 export const LoginPage = () => {
   const [userNameValue, setUserNameValue] = useState<string>('');
@@ -18,7 +24,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
 
   // Obtener credenciales de demo para mostrar al usuario
-  const demoCredentials = getDemoCredentials();
+  const demoCredentials: DemoCredential[] = getDemoCredentials();
 
   const handleUserNameValue = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUserNameValue(e.target.value);
@@ -103,20 +109,20 @@ export const LoginPage = () => {
                 <div key={index} style={{ 
                   margin: '8px 0', 
                   padding: '8px',
-                  backgroundColor: cred.role === 'manager' ? '#e3f2fd' : '#fff3e0',
+                  backgroundColor: cred.user?.role === 'manager' ? '#e3f2fd' : '#fff3e0',
                   borderRadius: '4px',
-                  border: '1px solid ' + (cred.role === 'manager' ? '#bbdefb' : '#ffcc02')
+                  border: '1px solid ' + (cred.user?.role === 'manager' ? '#bbdefb' : '#ffcc02')
                 }}>
-                  <div style={{ fontWeight: 'bold', color: cred.role === 'manager' ? '#1976d2' : '#f57c00' }}>
-                    {cred.role === 'manager' ? '👨‍💼 Manager' : '🏠 Inquilino'}: {cred.name}
+                  <div style={{ fontWeight: 'bold', color: cred.user?.role === 'manager' ? '#1976d2' : '#f57c00' }}>
+                    {cred.user?.role === 'manager' ? '👨‍💼 Manager' : '🏠 Inquilino'}: {cred.user?.firstName}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                     <span>
-                      <strong>User:</strong> {cred.username} | <strong>Pass:</strong> {cred.password}
+                      <strong>User:</strong> {cred.user?.username} | <strong>Pass:</strong> {cred.password}
                     </span>
                     <button
                       type="button"
-                      onClick={() => fillCredentials(cred.username, cred.password)}
+                      onClick={() => fillCredentials(cred.user?.username || '', cred.password || '')}
                       style={{
                         padding: '4px 8px',
                         fontSize: '12px',
