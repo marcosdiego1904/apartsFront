@@ -1,5 +1,5 @@
 export const getMonthYearString = (date: Date): string => {
-    return date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+    return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 };
 
 export const getFirstDayOfMonth = (date: Date): Date => {
@@ -10,18 +10,18 @@ export const getFirstDayOfNextMonth = (date: Date): Date => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 1);
 };
 
-// Helper para convertir "Alquiler Mes de Año" a un objeto Date para ordenar
+// Helper to convert "Rent Month Year" to a Date object for sorting
 export const getSortableDateFromConcept = (concept: string): Date | null => {
     const monthNames: { [key: string]: number } = {
-      enero: 0, febrero: 1, marzo: 2, abril: 3, mayo: 4, junio: 5,
-      julio: 6, agosto: 7, septiembre: 8, octubre: 9, noviembre: 10, diciembre: 11
+      january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+      july: 6, august: 7, september: 8, october: 9, november: 10, december: 11
     };
-    const parts = concept.toLowerCase().split(' '); // e.g., ["alquiler", "mayo", "de", "2025"]
-    if (parts.length < 4 || parts[0] !== 'alquiler') {
-      return null; // Formato no esperado
+    const parts = concept.toLowerCase().split(' '); // e.g., ["rent", "may", "2025"]
+    if (parts.length < 3 || (parts[0] !== 'rent' && parts[0] !== 'alquiler')) { // Keep 'alquiler' for backward compatibility
+      return null; // Unexpected format
     }
-    const monthName = parts[1];
-    const yearStr = parts[3];
+    const monthName = parts[0] === 'rent' ? parts[1] : parts[1]; // Logic is the same, but clear
+    const yearStr = parts[parts.length - 1];
     
     const month = monthNames[monthName];
     const year = parseInt(yearStr, 10);
@@ -33,27 +33,28 @@ export const getSortableDateFromConcept = (concept: string): Date | null => {
   };
 
   export const determineNextPayableMonth = (tenantPayments: any[], initialDate: Date | null): Date | null => {
-    if (!initialDate) return null; // Si no hay fecha inicial, no podemos determinar.
+    if (!initialDate) return null; // If there's no initial date, we can't determine.
     let currentDate = getFirstDayOfMonth(new Date(initialDate)); 
   
     // Helper function to check if rent for a specific month has been paid
     const isRentForMonthPaid = (monthDate: Date): boolean => {
-      const targetConceptPrefix = `Alquiler ${getMonthYearString(monthDate)}`;
+      const targetConceptPrefixRent = `Rent ${getMonthYearString(monthDate)}`;
+      const targetConceptPrefixAlquiler = `Alquiler ${getMonthYearString(monthDate)}`; // For backward compatibility
       // Check if any completed payment's concept starts with the target rent concept string
       return tenantPayments.some(payment => 
         payment.status === 'completed' && 
-        payment.concept.startsWith(targetConceptPrefix)
+        (payment.concept.startsWith(targetConceptPrefixRent) || payment.concept.startsWith(targetConceptPrefixAlquiler))
       );
     };
     
-    let attempts = 0; // Evitar bucles infinitos en casos extraños
+    let attempts = 0; // Avoid infinite loops in strange cases
     // eslint-disable-next-line no-constant-condition
-    while (attempts < 240) { // Buscar hasta 20 años en el futuro
+    while (attempts < 240) { // Search up to 20 years in the future
       if (!isRentForMonthPaid(currentDate)) {
-        return currentDate; // Este mes de alquiler no está pagado
+        return currentDate; // This month's rent is not paid
       }
-      currentDate = getFirstDayOfNextMonth(currentDate); // Mover al siguiente mes
+      currentDate = getFirstDayOfNextMonth(currentDate); // Move to the next month
       attempts++;
     }
-    return null; // No se encontró un mes pagable (ej. todos los meses futuros aparecen como pagados)
+    return null; // No payable month found (e.g., all future months appear as paid)
   }; 

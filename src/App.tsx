@@ -6,6 +6,9 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { DashboardManager } from './components/DashoardManager';
 import TenantDashboard from './components/tenantDasboard';
 import './styles/globalStyles.css';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { MockBackendService } from './services/MockBackendService';
+import './App.css';
 
 // Un componente de layout para envolver las rutas del dashboard
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
@@ -15,6 +18,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 // Componente que decide qué layout usar
 const AppLayout = () => {
   const location = useLocation();
+  const auth = useAuth();
 
   // No aplicar el layout del dashboard en la página de login
   if (location.pathname === '/login') {
@@ -152,6 +156,8 @@ const AppLayout = () => {
 };
 
 function App() {
+  const auth = useAuth();
+
   return (
     <Router>
       <ErrorBoundary>

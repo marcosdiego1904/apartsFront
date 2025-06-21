@@ -50,7 +50,7 @@ const ManagerMaintenanceView: React.FC = () => {
       setAllRawRequests(requests);
     } catch (error) {
       console.error("[ManagerMaintenanceView] Error fetching requests:", error);
-      displayFeedback('error', 'Error al cargar las solicitudes de mantenimiento.');
+      displayFeedback('error', 'Error loading maintenance requests.');
       setAllRawRequests([]);
     } finally {
       setIsLoading(false);
@@ -88,8 +88,8 @@ const ManagerMaintenanceView: React.FC = () => {
     if (sortConfig.key) {
       const sortableKey = sortConfig.key;
       const directionMultiplier = sortConfig.direction === 'asc' ? 1 : -1;
-      const priorityOrder: { [key in MaintenanceRequest['priority']]: number } = { 'Alta': 1, 'Media': 2, 'Baja': 3 };
-      const statusOrder: { [key in MaintenanceRequest['status']]: number } = { 'Pendiente': 1, 'En Progreso': 2, 'Completado': 3, 'Rechazado': 4 };
+      const priorityOrder: { [key in MaintenanceRequest['priority']]: number } = { 'High': 1, 'Medium': 2, 'Low': 3 };
+      const statusOrder: { [key in MaintenanceRequest['status']]: number } = { 'Pending': 1, 'In Progress': 2, 'Completed': 3, 'Rejected': 4 };
 
       filtered.sort((a, b) => {
         let valA: string | number | boolean = a[sortableKey] as string | number | boolean;
@@ -162,19 +162,19 @@ const ManagerMaintenanceView: React.FC = () => {
   
   const getStatusClass = (status: MaintenanceRequest['status']) => {
     switch (status) {
-      case 'Pendiente': return 'status-badge status-pending-maint';
-      case 'En Progreso': return 'status-badge status-in-progress-maint';
-      case 'Completado': return 'status-badge status-completed-maint';
-      case 'Rechazado': return 'status-badge status-rejected-maint';
+      case 'Pending': return 'status-badge status-pending-maint';
+      case 'In Progress': return 'status-badge status-in-progress-maint';
+      case 'Completed': return 'status-badge status-completed-maint';
+      case 'Rejected': return 'status-badge status-rejected-maint';
       default: return 'status-badge';
     }
   };
   
   const getPriorityClass = (priority: MaintenanceRequest['priority']) => {
     switch (priority) {
-      case 'Alta': return 'status-badge status-high';
-      case 'Media': return 'status-badge status-medium';
-      case 'Baja': return 'status-badge status-low';
+      case 'High': return 'status-badge status-high';
+      case 'Medium': return 'status-badge status-medium';
+      case 'Low': return 'status-badge status-low';
       default: return 'status-badge';
     }
   };
@@ -199,10 +199,10 @@ const ManagerMaintenanceView: React.FC = () => {
     try {
       await updateManagedRequest(updatedRequest);
       await fetchAndSetRequests();
-      displayFeedback('success', `Solicitud ${updatedRequest.id} actualizada con éxito.`);
+      displayFeedback('success', `Request ${updatedRequest.id} updated successfully.`);
     } catch (error) {
       console.error("Error updating request:", error);
-      displayFeedback('error', `Error al actualizar la solicitud ${updatedRequest.id}.`);
+      displayFeedback('error', `Error updating request ${updatedRequest.id}.`);
     } finally {
       setIsLoading(false);
       setIsEditModalOpen(false);
@@ -213,14 +213,14 @@ const ManagerMaintenanceView: React.FC = () => {
   if (isLoading && !allRawRequests.length) {
     return (
       <div style={{ padding: 'var(--spacing-xl, 24px)', textAlign: 'center', fontSize: '1.1rem', color: 'var(--color-text-secondary, #555)' }}>
-        <p>Cargando solicitudes de mantenimiento, por favor espere...</p>
+        <p>Loading maintenance requests, please wait...</p>
       </div>
     );
   }
 
   return (
     <div className="manager-maintenance-container" style={{ padding: 'var(--spacing-lg)' }}>
-      <h2 className="page-title">Gestión de Solicitudes de Mantenimiento</h2>
+      <h2 className="page-title">Maintenance Request Management</h2>
 
       {feedbackMessage && (
         <div 
@@ -239,38 +239,38 @@ const ManagerMaintenanceView: React.FC = () => {
 
       <div className="dashboard-card" style={{ marginBottom: 'var(--spacing-xl)' }}>
         <div className="card-header">
-          <h3 className="card-title">Filtros y Búsqueda</h3>
+          <h3 className="card-title">Filters and Search</h3>
         </div>
         <div className="card-content">
           <div className="form-grid form-grid-cols-3">
             <div className="form-group">
-              <label htmlFor="statusFilter" className="form-label">Estado:</label>
+              <label htmlFor="statusFilter" className="form-label">Status:</label>
               <select id="statusFilter" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="form-control">
-                <option value="all">Todos</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="En Progreso">En Progreso</option>
-                <option value="Completado">Completado</option>
-                <option value="Rechazado">Rechazado</option>
+                <option value="all">All</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Rejected">Rejected</option>
               </select>
             </div>
             <div className="form-group">
-              <label htmlFor="priorityFilter" className="form-label">Prioridad:</label>
+              <label htmlFor="priorityFilter" className="form-label">Priority:</label>
               <select id="priorityFilter" value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} className="form-control">
-                <option value="all">Todas</option>
-                <option value="Alta">Alta</option>
-                <option value="Media">Media</option>
-                <option value="Baja">Baja</option>
+                <option value="all">All</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
               </select>
             </div>
             <div className="form-group">
-              <label htmlFor="searchTerm" className="form-label">Buscar:</label>
+              <label htmlFor="searchTerm" className="form-label">Search:</label>
               <input
                 type="text"
                 id="searchTerm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="form-control"
-                placeholder="Buscar por inquilino, unidad, etc."
+                placeholder="Search by tenant, unit, etc."
               />
             </div>
           </div>
@@ -279,15 +279,15 @@ const ManagerMaintenanceView: React.FC = () => {
 
       <div className="dashboard-card">
         <div className="card-header">
-          <h3 className="card-title">Lista de Solicitudes</h3>
+          <h3 className="card-title">Request List</h3>
         </div>
         <div className="card-content">
           <div className="table-wrapper">
-            {isLoading && <div className="loading-overlay"><p>Actualizando datos...</p></div>}
+            {isLoading && <div className="loading-overlay"><p>Updating data...</p></div>}
             <div className="table-responsive">
               {processedRequests.length === 0 && !isLoading ? (
                 <div className="empty-state">
-                  <p>No hay solicitudes que coincidan con los filtros actuales.</p>
+                  <p>No requests match the current filters.</p>
                 </div>
               ) : (
                 <div className="table-container">
@@ -295,30 +295,30 @@ const ManagerMaintenanceView: React.FC = () => {
                     <thead>
                       <tr>
                         <th onClick={() => requestSort('id')}>ID {getSortIndicator('id')}</th>
-                        <th onClick={() => requestSort('tenantName')}>Inquilino {getSortIndicator('tenantName')}</th>
-                        <th onClick={() => requestSort('unit')}>Unidad {getSortIndicator('unit')}</th>
-                        <th onClick={() => requestSort('category')}>Categoría {getSortIndicator('category')}</th>
-                        <th onClick={() => requestSort('priority')}>Prioridad {getSortIndicator('priority')}</th>
-                        <th onClick={() => requestSort('status')}>Estado {getSortIndicator('status')}</th>
-                        <th onClick={() => requestSort('dateSubmitted')}>Fecha {getSortIndicator('dateSubmitted')}</th>
-                        <th>Acciones</th>
+                        <th onClick={() => requestSort('tenantName')}>Tenant {getSortIndicator('tenantName')}</th>
+                        <th onClick={() => requestSort('unit')}>Unit {getSortIndicator('unit')}</th>
+                        <th onClick={() => requestSort('category')}>Category {getSortIndicator('category')}</th>
+                        <th onClick={() => requestSort('priority')}>Priority {getSortIndicator('priority')}</th>
+                        <th onClick={() => requestSort('status')}>Status {getSortIndicator('status')}</th>
+                        <th onClick={() => requestSort('dateSubmitted')}>Date {getSortIndicator('dateSubmitted')}</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {displayedRequests.map(request => (
                         <tr key={request.id}>
                           <td data-label="ID">{request.id}</td>
-                          <td data-label="Inquilino">{request.tenantName}</td>
-                          <td data-label="Unidad">{request.unit}</td>
-                          <td data-label="Categoría">{request.category}</td>
-                          <td data-label="Prioridad"><span className={getPriorityClass(request.priority)}>{request.priority}</span></td>
-                          <td data-label="Estado"><span className={getStatusClass(request.status)}>{request.status}</span></td>
-                          <td data-label="Fecha">{new Date(request.dateSubmitted).toLocaleDateString()}</td>
-                          <td data-label="Acciones" className="actions-cell">
-                            <button onClick={() => handleOpenViewModal(request)} className="btn-icon" title="Ver Detalles">
+                          <td data-label="Tenant">{request.tenantName}</td>
+                          <td data-label="Unit">{request.unit}</td>
+                          <td data-label="Category">{request.category}</td>
+                          <td data-label="Priority"><span className={getPriorityClass(request.priority)}>{request.priority}</span></td>
+                          <td data-label="Status"><span className={getStatusClass(request.status)}>{request.status}</span></td>
+                          <td data-label="Date">{new Date(request.dateSubmitted).toLocaleDateString()}</td>
+                          <td data-label="Actions" className="actions-cell">
+                            <button onClick={() => handleOpenViewModal(request)} className="btn-icon" title="View Details">
                               <FiEye />
                             </button>
-                            <button onClick={() => handleOpenEditModal(request)} className="btn-icon btn-edit" title="Editar Solicitud">
+                            <button onClick={() => handleOpenEditModal(request)} className="btn-icon btn-edit" title="Edit Request">
                               <FiEdit />
                             </button>
                           </td>
@@ -333,13 +333,13 @@ const ManagerMaintenanceView: React.FC = () => {
           {totalPages > 1 && (
             <div className="pagination-container">
               <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="pagination-button">
-                Anterior
+                Previous
               </button>
               <span className="pagination-info">
-                Página {currentPage} de {totalPages}
+                Page {currentPage} of {totalPages}
               </span>
               <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="pagination-button">
-                Siguiente
+                Next
               </button>
             </div>
           )}
@@ -352,7 +352,7 @@ const ManagerMaintenanceView: React.FC = () => {
             <form onSubmit={(e) => { e.preventDefault(); handleSaveEditModal(editingRequest); }}>
               <div className="modal-header">
                 <h3 className="modal-title">
-                  <FiEdit /> Editar Solicitud de Mantenimiento
+                  <FiEdit /> Edit Maintenance Request
                 </h3>
                 <button type="button" onClick={handleCloseEditModal} className="modal-close-btn">
                   <FiX />
@@ -362,60 +362,60 @@ const ManagerMaintenanceView: React.FC = () => {
               <div className="modal-body">
                 <div className="form-grid">
                   <div className="form-group">
-                    <label htmlFor="edit-status" className="form-label">Estado:</label>
+                    <label htmlFor="edit-status" className="form-label">Status:</label>
                     <select
                       id="edit-status"
                       className="form-control"
                       value={editingRequest.status}
                       onChange={(e) => setEditingRequest({ ...editingRequest, status: e.target.value as MaintenanceRequest['status'] })}
                     >
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="En Progreso">En Progreso</option>
-                      <option value="Completado">Completado</option>
-                      <option value="Rechazado">Rechazado</option>
+                      <option value="Pending">Pending</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Rejected">Rejected</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label htmlFor="edit-priority" className="form-label">Prioridad:</label>
+                    <label htmlFor="edit-priority" className="form-label">Priority:</label>
                     <select
                       id="edit-priority"
                       className="form-control"
                       value={editingRequest.priority}
                       onChange={(e) => setEditingRequest({ ...editingRequest, priority: e.target.value as MaintenanceRequest['priority'] })}
                     >
-                      <option value="Baja">Baja</option>
-                      <option value="Media">Media</option>
-                      <option value="Alta">Alta</option>
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
                     </select>
                   </div>
                   <div className="form-group full-width">
-                    <label htmlFor="edit-assigned" className="form-label">Asignado a:</label>
+                    <label htmlFor="edit-assigned" className="form-label">Assigned to:</label>
                     <input
                       type="text"
                       id="edit-assigned"
                       className="form-control"
                       value={editingRequest.assignedTo || ''}
                       onChange={(e) => setEditingRequest({ ...editingRequest, assignedTo: e.target.value })}
-                      placeholder="Ej: Equipo de fontanería"
+                      placeholder="e.g.: Plumbing team"
                     />
                   </div>
                   <div className="form-group full-width">
-                    <label htmlFor="edit-comments" className="form-label">Comentarios del Administrador:</label>
+                    <label htmlFor="edit-comments" className="form-label">Manager's Comments:</label>
                     <textarea
                       id="edit-comments"
                       className="form-control"
                       rows={4}
                       value={editingRequest.managerComments || ''}
                       onChange={(e) => setEditingRequest({ ...editingRequest, managerComments: e.target.value })}
-                      placeholder="Añadir notas internas sobre el progreso o la resolución..."
+                      placeholder="Add internal notes about progress or resolution..."
                     ></textarea>
                   </div>
                 </div>
               </div>
 
               <div className="modal-footer">
-                <button type="button" onClick={handleCloseEditModal} className="btn btn-secondary">Cancelar</button>
-                <button type="submit" className="btn btn-primary">Guardar Cambios</button>
+                <button type="button" onClick={handleCloseEditModal} className="btn btn-secondary">Cancel</button>
+                <button type="submit" className="btn btn-primary">Save Changes</button>
               </div>
             </form>
           </div>
@@ -428,7 +428,7 @@ const ManagerMaintenanceView: React.FC = () => {
 
             <div className="modal-header">
               <h3 className="modal-title">
-                <FiInfo /> Detalles de la Solicitud
+                <FiInfo /> Request Details
               </h3>
               <button onClick={() => setIsViewModalOpen(false)} className="modal-close-btn">
                 <FiX />
@@ -441,33 +441,33 @@ const ManagerMaintenanceView: React.FC = () => {
                 <div className="detail-card">
                   <div className="detail-card-header">
                     <FiUser />
-                    <h4>Información del Inquilino</h4>
+                    <h4>Tenant Information</h4>
                   </div>
                   <div className="detail-card-body">
-                    <p><strong>ID de Solicitud:</strong> <span>{viewingRequest.id}</span></p>
-                    <p><strong>Inquilino:</strong> <span>{viewingRequest.tenantName}</span></p>
-                    <p><strong>Unidad:</strong> <span>{viewingRequest.unit}</span></p>
-                    <p><strong>Fecha de Envío:</strong> <span>{new Date(viewingRequest.dateSubmitted).toLocaleString()}</span></p>
+                    <p><strong>Request ID:</strong> <span>{viewingRequest.id}</span></p>
+                    <p><strong>Tenant:</strong> <span>{viewingRequest.tenantName}</span></p>
+                    <p><strong>Unit:</strong> <span>{viewingRequest.unit}</span></p>
+                    <p><strong>Date Submitted:</strong> <span>{new Date(viewingRequest.dateSubmitted).toLocaleString()}</span></p>
                   </div>
                 </div>
 
                 <div className="detail-card">
                   <div className="detail-card-header">
                     <FiTool />
-                    <h4>Detalles de la Solicitud</h4>
+                    <h4>Request Details</h4>
                   </div>
                   <div className="detail-card-body">
-                    <p><strong>Categoría:</strong> <span>{viewingRequest.category}</span></p>
-                    <p><strong>Prioridad:</strong> <span className={getPriorityClass(viewingRequest.priority)}>{viewingRequest.priority}</span></p>
-                    <p><strong>Estado:</strong> <span className={getStatusClass(viewingRequest.status)}>{viewingRequest.status}</span></p>
-                    <p><strong>Asignado a:</strong> <span>{viewingRequest.assignedTo || 'N/A'}</span></p>
+                    <p><strong>Category:</strong> <span>{viewingRequest.category}</span></p>
+                    <p><strong>Priority:</strong> <span className={getPriorityClass(viewingRequest.priority)}>{viewingRequest.priority}</span></p>
+                    <p><strong>Status:</strong> <span className={getStatusClass(viewingRequest.status)}>{viewingRequest.status}</span></p>
+                    <p><strong>Assigned to:</strong> <span>{viewingRequest.assignedTo || 'N/A'}</span></p>
                   </div>
                 </div>
 
                 <div className="detail-card full-span">
                    <div className="detail-card-header">
                     <FiMessageSquare />
-                    <h4>Descripción</h4>
+                    <h4>Description</h4>
                   </div>
                   <div className="detail-card-body">
                     <p>{viewingRequest.fullDescription}</p>
@@ -477,21 +477,21 @@ const ManagerMaintenanceView: React.FC = () => {
                 <div className="detail-card full-span">
                    <div className="detail-card-header">
                     <FiMessageSquare />
-                    <h4>Comentarios del Administrador</h4>
+                    <h4>Manager's Comments</h4>
                   </div>
                   <div className="detail-card-body">
-                    <p>{viewingRequest.managerComments || 'Sin comentarios.'}</p>
+                    <p>{viewingRequest.managerComments || 'No comments.'}</p>
                   </div>
                 </div>
 
                  <div className="detail-card full-span">
                    <div className="detail-card-header">
                     <FiStar />
-                    <h4>Feedback del Inquilino</h4>
+                    <h4>Tenant's Feedback</h4>
                   </div>
                   <div className="detail-card-body">
-                     <p><strong>Rating:</strong> <span>{viewingRequest.tenantRating ? `${'★'.repeat(viewingRequest.tenantRating)}${'☆'.repeat(5 - viewingRequest.tenantRating)}` : 'No calificado'}</span></p>
-                     <p><strong>Comentarios:</strong> <span>{viewingRequest.tenantComment || 'Sin comentarios.'}</span></p>
+                     <p><strong>Rating:</strong> <span>{viewingRequest.tenantRating ? `${'★'.repeat(viewingRequest.tenantRating)}${'☆'.repeat(5 - viewingRequest.tenantRating)}` : 'Not rated'}</span></p>
+                     <p><strong>Comments:</strong> <span>{viewingRequest.tenantComment || 'No comments.'}</span></p>
                   </div>
                 </div>
               </div>

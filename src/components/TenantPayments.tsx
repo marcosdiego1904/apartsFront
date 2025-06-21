@@ -63,13 +63,13 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
       setCurrentPaymentMonth(nextPayableMonth);
 
       if (nextPayableMonth) {
-        const conceptOfNextPayableMonth = `Alquiler ${getMonthYearString(nextPayableMonth)}`;
+        const conceptOfNextPayableMonth = `Rent ${getMonthYearString(nextPayableMonth)}`;
         const revertedPayment = sortedHistory.find(
           p => p.concept === conceptOfNextPayableMonth && p.status === 'reverted' && p.tenantId === user.id
         );
         if (revertedPayment) {
           setUrgentPaymentContext({
-            message: `Atención: El pago para ${revertedPayment.concept} fue revertido. Por favor, realiza el pago nuevamente.`,
+            message: `Attention: The payment for ${revertedPayment.concept} was reverted. Please make the payment again.`,
             concept: revertedPayment.concept,
             isReverted: true,
           });
@@ -81,7 +81,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
       }
     } catch (error) {
       console.error("[TenantPayments] Failed to fetch payment data:", error);
-      setPaymentError("No se pudo cargar la información de pagos. Por favor, intente más tarde.");
+      setPaymentError("Could not load payment information. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -98,7 +98,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
     let amount = 0;
     let isAlquilerDue = false;
     if (currentPaymentMonth) {
-        isAlquilerDue = !tenantViewHistory.find(p => p.concept === `Alquiler ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed');
+        isAlquilerDue = !tenantViewHistory.find(p => p.concept === `Rent ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed');
     }
 
     if (isAlquilerDue) {
@@ -152,12 +152,12 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
     setUrgentPaymentContext(null);
 
     if (!user) {
-      setPaymentError("Error: Usuario no autenticado.");
+      setPaymentError("Error: User not authenticated.");
       return;
     }
 
     if (totalAmountToPay <= 0) {
-      setPaymentError("No hay monto seleccionado para pagar.");
+      setPaymentError("No amount selected to pay.");
       return;
     }
 
@@ -167,7 +167,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
       paymentDetails.cvv !== PREDETERMINED_CARD.CVV ||
       paymentDetails.cardHolderName.trim() !== PREDETERMINED_CARD.HOLDER_NAME
     ) {
-      setPaymentError("Los detalles de la tarjeta de crédito son incorrectos.");
+      setPaymentError("The credit card details are incorrect.");
       return;
     }
 
@@ -179,10 +179,10 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
       let paymentConcept = "";
 
       if (currentPaymentMonth) {
-        const isAlquilerDue = !tenantViewHistory.find(p => p.concept === `Alquiler ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed');
+        const isAlquilerDue = !tenantViewHistory.find(p => p.concept === `Rent ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed');
         if (isAlquilerDue && (totalAmountToPay >= DEFAULT_MONTHLY_AMOUNT || selectedCharges.length === 0)) {
           rentalPaidThisTransaction = true;
-          paymentConcept = `Alquiler ${getMonthYearString(currentPaymentMonth)}`;
+          paymentConcept = `Rent ${getMonthYearString(currentPaymentMonth)}`;
         }
       }
 
@@ -195,13 +195,13 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
         if (paymentConcept) {
           paymentConcept += " + ";
         }
-        paymentConcept += `Cargos (${paidChargesConcepts.join(', ')})`;
+        paymentConcept += `Charges (${paidChargesConcepts.join(', ')})`;
       }
       
       if (!paymentConcept) {
-         if (paidChargesDetails.length > 0) paymentConcept = "Pago de Cargos Adicionales";
+         if (paidChargesDetails.length > 0) paymentConcept = "Payment of Additional Charges";
          else {
-            setPaymentError("Error al determinar el concepto del pago.");
+            setPaymentError("Error determining payment concept.");
             return;
          }
        }
@@ -229,14 +229,14 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
 
     } catch (error) {
       console.error("[TenantPayments] Payment failed:", error);
-      setPaymentError("Ocurrió un error al procesar el pago.");
+      setPaymentError("An error occurred while processing the payment.");
     } finally {
       setIsLoading(false);
     }
   };
 
   if (isLoading) {
-    return <div>Cargando información de pagos...</div>;
+    return <div>Loading payment information...</div>;
   }
 
   // Variables para el JSX, con manejo de nulabilidad para currentPaymentMonth
@@ -248,19 +248,19 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
   if (currentPaymentMonth) {
     displayCurrentPaymentMonthStr = getMonthYearString(currentPaymentMonth);
     const currentDueDate = new Date(currentPaymentMonth.getFullYear(), currentPaymentMonth.getMonth(), PAYMENT_DUE_DAY);
-    displayCurrentPaymentDueDateStr = currentDueDate.toLocaleDateString('es-ES', {day: 'numeric', month: 'long', year: 'numeric'});
+    displayCurrentPaymentDueDateStr = currentDueDate.toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'});
     
     const nextScheduledMonthDate = getFirstDayOfNextMonth(currentPaymentMonth);
     displayNextScheduledPaymentMonthStr = getMonthYearString(nextScheduledMonthDate);
     const nextScheduledDueDate = new Date(nextScheduledMonthDate.getFullYear(), nextScheduledMonthDate.getMonth(), PAYMENT_DUE_DAY);
-    displayNextScheduledPaymentDueDateStr = nextScheduledDueDate.toLocaleDateString('es-ES', {day: 'numeric', month: 'long', year: 'numeric'});
+    displayNextScheduledPaymentDueDateStr = nextScheduledDueDate.toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'});
   } else {
     // Caso donde no hay un mes de alquiler actual (ej. todo pagado)
     const today = new Date();
     const nextMonthFromToday = getFirstDayOfNextMonth(today);
     displayNextScheduledPaymentMonthStr = getMonthYearString(nextMonthFromToday);
     const nextScheduledDueDate = new Date(nextMonthFromToday.getFullYear(), nextMonthFromToday.getMonth(), PAYMENT_DUE_DAY);
-    displayNextScheduledPaymentDueDateStr = nextScheduledDueDate.toLocaleDateString('es-ES', {day: 'numeric', month: 'long', year: 'numeric'});
+    displayNextScheduledPaymentDueDateStr = nextScheduledDueDate.toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'});
   }
   
   const pendingTenantChargesForDisplay = tenantCharges.filter(c => c.status === 'pending' && c.tenantId === user?.id);
@@ -284,9 +284,9 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
 
   return (
     <div className="payments-view-container" style={{ padding: '2rem' }}> {/* Removed explicit page background color to allow global styles */}
-      <h2 className="section-title" style={{ textAlign: 'center', color: 'var(--text-primary)', marginBottom: '2.5rem', fontSize: '1.8rem' }}>💳 Mis Pagos</h2>
+      <h2 className="section-title" style={{ textAlign: 'center', color: 'var(--text-primary)', marginBottom: '2.5rem', fontSize: '1.8rem' }}>💳 My Payments</h2>
 
-      {user && <p className="welcome-message" style={{textAlign: 'center', marginBottom: '2rem', fontSize: '1.1rem', color: 'var(--text-secondary)'}}>Bienvenido, {user.firstName || user.username}</p>}
+      {user && <p className="welcome-message" style={{textAlign: 'center', marginBottom: '2rem', fontSize: '1.1rem', color: 'var(--text-secondary)'}}>Welcome, {user.firstName || user.username}</p>}
 
       {urgentPaymentContext && (
         <div 
@@ -303,7 +303,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
         >
           <h4 style={{ marginTop: 0, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', fontSize: '1.2em', color: 'var(--accent-danger)' }}>
             <span role="img" aria-label="warning" style={{ marginRight: '0.75rem', fontSize: '1.3em' }}>⚠️</span>
-            Aviso Importante
+            Important Notice
           </h4>
           <p style={{ margin: 0, fontSize: '0.95rem' }}>{urgentPaymentContext.message}</p>
         </div>
@@ -311,24 +311,24 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
 
       {/* Card 1: Current Dues & Payment Actions */}
       <section className="dashboard-section payment-action-card" style={cardStyle}>
-        <h3 style={cardTitleStyle}>Estado de Cuenta y Pagos Pendientes</h3>
+        <h3 style={cardTitleStyle}>Account Status and Pending Payments</h3>
         
         {currentPaymentMonth && displayCurrentPaymentMonthStr && displayCurrentPaymentDueDateStr ? (
           <div style={{marginBottom: '1.5rem'}}>
             <p style={{color: 'var(--text-primary)', fontSize: '1.05rem'}}>
-              Concepto principal: <strong>Alquiler {displayCurrentPaymentMonthStr}</strong>
+              Main concept: <strong>Rent {displayCurrentPaymentMonthStr}</strong>
             </p>
             <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem'}}>
-              Vencimiento: {displayCurrentPaymentDueDateStr}
+              Due date: {displayCurrentPaymentDueDateStr}
             </p>
           </div>
         ) : (
-          !showPaymentForm && <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem'}}>No hay alquileres pendientes de pago actualmente.</p>
+          !showPaymentForm && <p style={{color: 'var(--text-secondary)', marginBottom: '1.5rem'}}>There are currently no outstanding rent payments.</p>
         )}
         
         {pendingTenantChargesForDisplay.length > 0 && (
             <div className="pending-charges-section" style={{marginTop: '1rem', marginBottom: '2rem'}}>
-              <h4 style={{fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Cargos Adicionales Pendientes</h4>
+              <h4 style={{fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Pending Additional Charges</h4>
               <ul className="charges-list" style={{listStyle: 'none', paddingLeft: '0'}}>
                 {pendingTenantChargesForDisplay.map(charge => (
                   <li key={charge.id} className="charge-item" style={{marginBottom: '0.75rem', display: 'flex', alignItems: 'center'}}>
@@ -340,7 +340,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
                       style={{marginRight: '10px', transform: 'scale(1.1)' }}
                     />
                     <label htmlFor={`charge-${charge.id}`} style={{color: 'var(--text-primary)', fontSize: '0.95rem'}}>
-                      {charge.concept} - <strong style={{color: 'var(--accent-warning)'}}>${charge.amount.toFixed(2)}</strong> (Asignado: {charge.dateAssigned})
+                      {charge.concept} - <strong style={{color: 'var(--accent-warning)'}}>${charge.amount.toFixed(2)}</strong> (Assigned: {charge.dateAssigned})
                     </label>
                   </li>
                 ))}
@@ -350,9 +350,9 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
 
         {showPaymentForm && (
           <div className="payment-summary" style={{marginBottom: '2rem', padding: '1.25rem', border: '1px solid var(--border-secondary, #dee2e6)', borderRadius: '0.5rem', background: 'var(--bg-tertiary, #f8f9fa)'}}>
-            <h4 style={{fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Resumen del Pago Actual</h4>
-            {currentPaymentMonth && !tenantViewHistory.find(p => p.concept === `Alquiler ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed') && (
-               <p style={{color: 'var(--text-primary)'}}>Alquiler ({getMonthYearString(currentPaymentMonth)}): ${DEFAULT_MONTHLY_AMOUNT.toFixed(2)}</p>
+            <h4 style={{fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '1rem'}}>Current Payment Summary</h4>
+            {currentPaymentMonth && !tenantViewHistory.find(p => p.concept === `Rent ${getMonthYearString(currentPaymentMonth)}` && p.status === 'completed') && (
+               <p style={{color: 'var(--text-primary)'}}>Rent ({getMonthYearString(currentPaymentMonth)}): ${DEFAULT_MONTHLY_AMOUNT.toFixed(2)}</p>
             )}
             {selectedCharges.map(chargeId => {
               const charge = tenantCharges.find(c => c.id === chargeId);
@@ -360,20 +360,20 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
             })}
             <hr style={{margin: '1rem 0', borderColor: 'var(--border-secondary, #ced4da)'}}/>
             <p style={{color: 'var(--text-primary)', fontSize: '1.15rem'}}>
-              <strong>Total a Pagar: <span style={{color: 'var(--accent-warning)'}}>${totalAmountToPay.toFixed(2)}</span></strong>
+              <strong>Total to Pay: <span style={{color: 'var(--accent-warning)'}}>${totalAmountToPay.toFixed(2)}</span></strong>
             </p>
           </div>
         )}
         
         {!showPaymentForm && !currentPaymentMonth && pendingTenantChargesForDisplay.length === 0 && (
-             <p style={{marginTop: '1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem'}}>🎉 ¡Estás al día con tus pagos de alquiler y no tienes cargos adicionales pendientes!</p>
+             <p style={{marginTop: '1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '1rem'}}>🎉 You are up to date with your rent payments and have no pending additional charges!</p>
         )}
       </section>
 
       {/* Card 2: Payment Form */}
       {showPaymentForm && (
         <section className="dashboard-section payment-form-card" style={cardStyle}>
-            <h3 style={cardTitleStyle}>Realizar Pago</h3>
+            <h3 style={cardTitleStyle}>Make a Payment</h3>
             <div 
                 style={{
                     border: '1px solid var(--border-secondary, #ccc)',
@@ -384,16 +384,16 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
             >
                 <form onSubmit={handleSubmitPayment}>
                     <div style={{ marginBottom: '1.5rem', fontFamily: 'monospace', fontSize: '0.9rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-code-block, #e9ecef)', padding: '1rem', borderRadius: '0.5rem' }}>
-                        <p style={{margin: 0, fontWeight: 'bold'}}>Datos de la Tarjeta de Demostración:</p>
-                        <p style={{margin: '0.25rem 0'}}>Número: 1122233</p>
-                        <p style={{margin: '0.25rem 0'}}>Nombre: Demo User</p>
-                        <p style={{margin: '0.25rem 0'}}>Vencimiento: 12/25</p>
+                        <p style={{margin: 0, fontWeight: 'bold'}}>Demo Card Details:</p>
+                        <p style={{margin: '0.25rem 0'}}>Number: 1122233</p>
+                        <p style={{margin: '0.25rem 0'}}>Name: Demo User</p>
+                        <p style={{margin: '0.25rem 0'}}>Expiry: 12/25</p>
                         <p style={{margin: '0.25rem 0'}}>CVV: 123</p>
                     </div>
 
                     <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
                         <div className="form-group" style={{ flex: '1 1 100%'}}>
-                            <label htmlFor="cardHolderName" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Nombre del Titular</label>
+                            <label htmlFor="cardHolderName" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Cardholder Name</label>
                             <input
                                 type="text"
                                 id="cardHolderName"
@@ -406,7 +406,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
                         </div>
 
                         <div className="form-group" style={{ flex: '1 1 60%'}}>
-                            <label htmlFor="cardNumber" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Número de Tarjeta</label>
+                            <label htmlFor="cardNumber" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Card Number</label>
                             <input
                                 type="text"
                                 id="cardNumber"
@@ -420,7 +420,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
                         </div>
 
                         <div className="form-group" style={{ flex: '1 1 20%'}}>
-                            <label htmlFor="expiryDate" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Vencimiento (MM/AA)</label>
+                            <label htmlFor="expiryDate" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: 'var(--text-primary)' }}>Expiry (MM/YY)</label>
                             <input
                                 type="text"
                                 id="expiryDate"
@@ -429,7 +429,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
                                 onChange={handleInputChange}
                                 required
                                 style={{ width: '100%', padding: '0.75rem', border: '1px solid #ccc', borderRadius: '0.375rem' }}
-                                placeholder="MM/AA"
+                                placeholder="MM/YY"
                             />
                         </div>
 
@@ -466,7 +466,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-primary-dark, #0056b3)'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--accent-primary, #007bff)'}
                     >
-                        Pagar ${totalAmountToPay.toFixed(2)}
+                        Pay ${totalAmountToPay.toFixed(2)}
                     </button>
                 </form>
             </div>
@@ -475,15 +475,15 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
 
       {/* Card 3: Payment History */}
       <section className="dashboard-section payment-history-card" style={cardStyle}>
-        <h3 style={cardTitleStyle}>Historial de Transacciones</h3>
+        <h3 style={cardTitleStyle}>Transaction History</h3>
         <div className="table-responsive" style={{ maxHeight: '400px', overflowY: 'auto' }}>
             <table className="payment-history-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-secondary, white)' }}>
                     <tr>
-                        <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Fecha</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Concepto</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Monto</th>
-                        <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Estado</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Date</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'left', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Concept</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'right', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Amount</th>
+                        <th style={{ padding: '0.75rem', textAlign: 'center', borderBottom: '2px solid var(--accent-primary, #007bff)', color: 'var(--text-primary)' }}>Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -505,14 +505,14 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
                                     // backgroundColor set by global CSS a .status-<statusname>
                                 }}
                             >
-                                {payment.status === 'completed' ? 'Completado' : payment.status === 'reverted' ? 'Revertido' : 'Pendiente'}
+                                {payment.status === 'completed' ? 'Completed' : payment.status === 'reverted' ? 'Reverted' : 'Pending'}
                             </span>
                         </td>
                     </tr>
                     ))
                 ) : (
                     <tr>
-                    <td colSpan={4} style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay transacciones registradas.</td>
+                    <td colSpan={4} style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No transactions recorded.</td>
                     </tr>
                 )}
                 </tbody>
@@ -520,7 +520,7 @@ const TenantPayments: React.FC<TenantPaymentsProps> = ({ onPaymentSuccess }) => 
         </div>
         {!currentPaymentMonth && (
              <div style={{marginTop: '1.5rem', padding: '1rem', textAlign: 'center', background: 'var(--accent-success-light, #e8f5e9)', borderRadius: '0.5rem', border: '1px solid var(--accent-success, #4caf50)'}}>
-                 <p style={{margin: 0, color: 'var(--accent-success-dark, #1b5e20)'}}>Próximo pago programado: <strong>Alquiler {displayNextScheduledPaymentMonthStr}</strong> (Vence el {displayNextScheduledPaymentDueDateStr})</p>
+                 <p style={{margin: 0, color: 'var(--accent-success-dark, #1b5e20)'}}>Next scheduled payment: <strong>Rent {displayNextScheduledPaymentMonthStr}</strong> (Due on {displayNextScheduledPaymentDueDateStr})</p>
              </div>
         )}
       </section>

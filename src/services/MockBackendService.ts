@@ -59,8 +59,8 @@ export interface MaintenanceRequest {
   description: string;
   fullDescription: string;
   dateSubmitted: string;
-  status: 'Pendiente' | 'En Progreso' | 'Completado' | 'Rechazado';
-  priority: 'Alta' | 'Media' | 'Baja';
+  status: 'Pending' | 'In Progress' | 'Completed' | 'Rejected';
+  priority: 'High' | 'Medium' | 'Low';
   assignedTo?: string;
   managerComments?: string;
   tenantRating?: number;
@@ -251,18 +251,18 @@ export class MockBackendService {
     this._paymentHistory = [
       {
         id: new Date(now.getFullYear(), now.getMonth() - 2, 15).toISOString(),
-        date: new Date(now.getFullYear(), now.getMonth() - 2, 15).toLocaleDateString('es-ES'),
+        date: new Date(now.getFullYear(), now.getMonth() - 2, 15).toLocaleDateString('en-US'),
         amount: 150.75,
-        concept: `Alquiler ${getMonthYearString(new Date(now.getFullYear(), now.getMonth() - 2, 1))}`,
+        concept: `Rent ${getMonthYearString(new Date(now.getFullYear(), now.getMonth() - 2, 1))}`,
         status: 'completed',
         tenantId,
         tenantName,
       },
       {
         id: new Date(now.getFullYear(), now.getMonth() - 1, 15).toISOString(),
-        date: new Date(now.getFullYear(), now.getMonth() - 1, 15).toLocaleDateString('es-ES'),
+        date: new Date(now.getFullYear(), now.getMonth() - 1, 15).toLocaleDateString('en-US'),
         amount: 150.75,
-        concept: `Alquiler ${getMonthYearString(new Date(now.getFullYear(), now.getMonth() - 1, 1))}`,
+        concept: `Rent ${getMonthYearString(new Date(now.getFullYear(), now.getMonth() - 1, 1))}`,
         status: 'completed',
         tenantId,
         tenantName,
@@ -275,8 +275,8 @@ export class MockBackendService {
         tenantId,
         tenantName,
         amount: 50,
-        concept: 'Reparación de ventana',
-        dateAssigned: new Date(now.getFullYear(), now.getMonth() - 1, 5).toLocaleDateString('es-ES'),
+        concept: 'Window repair',
+        dateAssigned: new Date(now.getFullYear(), now.getMonth() - 1, 5).toLocaleDateString('en-US'),
         dateAssignedISO: new Date(now.getFullYear(), now.getMonth() - 1, 5).toISOString(),
         status: 'pending',
       },
@@ -285,8 +285,8 @@ export class MockBackendService {
         tenantId,
         tenantName,
         amount: 25,
-        concept: 'Multa por ruido',
-        dateAssigned: new Date(now.getFullYear(), now.getMonth() - 1, 10).toLocaleDateString('es-ES'),
+        concept: 'Noise fine',
+        dateAssigned: new Date(now.getFullYear(), now.getMonth() - 1, 10).toLocaleDateString('en-US'),
         dateAssignedISO: new Date(now.getFullYear(), now.getMonth() - 1, 10).toISOString(),
         status: 'paid',
         paymentId: this._paymentHistory[1].id,
@@ -299,8 +299,8 @@ export class MockBackendService {
       {
         id: tenantRequestId,
         tenantId: tenantId,
-        title: 'Grifo de la cocina gotea',
-        description: 'El grifo de la cocina ha estado goteando constantemente durante los últimos dos días.',
+        title: 'Kitchen faucet is dripping',
+        description: 'The kitchen faucet has been dripping constantly for the last two days.',
         category: 'plumbing',
         urgency: 'medium',
         dateSubmitted: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
@@ -408,7 +408,7 @@ export class MockBackendService {
         if (paymentData.rentalPaidThisTransaction) {
             const newPayment: PaymentRecordProperties = {
                 id: paymentData.paymentId,
-                date: new Date().toLocaleDateString('es-ES'),
+                date: new Date().toLocaleDateString('en-US'),
                 amount: paymentData.amount,
                 concept: paymentData.concept,
                 status: 'completed',
@@ -582,22 +582,22 @@ export class MockBackendService {
     // This logic is also from ManagerMaintenanceView.tsx
     let managerCategory = '';
     switch (tenantRequest.category) {
-        case 'plumbing': managerCategory = 'Plomería'; break;
-        case 'electrical': managerCategory = 'Electricidad'; break;
-        case 'appliance': managerCategory = 'Electrodomésticos'; break;
+        case 'plumbing': managerCategory = 'Plumbing'; break;
+        case 'electrical': managerCategory = 'Electricity'; break;
+        case 'appliance': managerCategory = 'Appliances'; break;
         case 'general': managerCategory = 'General'; break;
-        default: managerCategory = 'Desconocida';
+        default: managerCategory = 'Unknown';
     }
 
-    let managerPriority: MaintenanceRequest['priority'] = 'Baja';
+    let managerPriority: MaintenanceRequest['priority'] = 'Low';
     switch (tenantRequest.urgency) {
-        case 'high': managerPriority = 'Alta'; break;
-        case 'medium': managerPriority = 'Media'; break;
-        case 'low': managerPriority = 'Baja'; break;
+        case 'high': managerPriority = 'High'; break;
+        case 'medium': managerPriority = 'Medium'; break;
+        case 'low': managerPriority = 'Low'; break;
     }
 
     const tenantUser = this._users.find(u => u.id === tenantRequest.tenantId);
-    const tenantName = tenantUser ? `${tenantUser.firstName} ${tenantUser.lastName}` : "Inquilino Desconocido";
+    const tenantName = tenantUser ? `${tenantUser.firstName} ${tenantUser.lastName}` : "Unknown Tenant";
     const unitNumber = `Apt ${(Math.floor(Math.random() * 10) + 1)}${['A', 'B', 'C', 'D'][Math.floor(Math.random() * 4)]}`;
 
     return {
@@ -608,7 +608,7 @@ export class MockBackendService {
         description: tenantRequest.title,
         fullDescription: tenantRequest.description,
         dateSubmitted: tenantRequest.dateSubmitted,
-        status: 'Pendiente',
+        status: 'Pending',
         priority: managerPriority,
         assignedTo: '',
         managerComments: '',
@@ -647,10 +647,10 @@ export class MockBackendService {
                     let finalStatus = req.status;
                     if (managerStatus) {
                         switch (managerStatus) {
-                            case 'Pendiente': finalStatus = 'sent'; break;
-                            case 'En Progreso': finalStatus = 'in-progress'; break;
-                            case 'Completado': finalStatus = 'completed'; break;
-                            case 'Rechazado': finalStatus = 'cancelled'; break;
+                            case 'Pending': finalStatus = 'sent'; break;
+                            case 'In Progress': finalStatus = 'in-progress'; break;
+                            case 'Completed': finalStatus = 'completed'; break;
+                            case 'Rejected': finalStatus = 'cancelled'; break;
                         }
                     }
                     return { ...req, status: finalStatus };
@@ -663,11 +663,11 @@ export class MockBackendService {
                     id: req.id,
                     title: req.title,
                     status: req.status,
-                    dateSubmitted: new Date(req.dateSubmitted).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+                    dateSubmitted: new Date(req.dateSubmitted).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
                 }));
 
             // --- Calculate Next Payment ---
-            const getMonthYearString = (date: Date): string => date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+            const getMonthYearString = (date: Date): string => date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
             const getFirstDayOfMonth = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), 1);
             const getFirstDayOfNextMonth = (date: Date): Date => new Date(date.getFullYear(), date.getMonth() + 1, 1);
             
@@ -675,7 +675,7 @@ export class MockBackendService {
                 if (!initialDate) return null;
                 let currentDate = getFirstDayOfMonth(new Date(initialDate));
                 const isRentForMonthPaid = (monthDate: Date): boolean => {
-                    const targetConceptPrefix = `Alquiler ${getMonthYearString(monthDate)}`;
+                    const targetConceptPrefix = `Rent ${getMonthYearString(monthDate)}`;
                     return payments.some(p => p.status === 'completed' && p.concept.startsWith(targetConceptPrefix));
                 };
                 let attempts = 0;
@@ -698,13 +698,13 @@ export class MockBackendService {
                 const dueDate = new Date(nextPayableMonthDate.getFullYear(), nextPayableMonthDate.getMonth(), PAYMENT_DUE_DAY);
                 nextPaymentData = {
                     amount: DEFAULT_MONTHLY_AMOUNT + totalPendingCharges,
-                    dueDate: dueDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric'}),
+                    dueDate: dueDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric'}),
                     daysLeft: Math.max(0, Math.ceil((dueDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24))),
                 };
             } else if (totalPendingCharges > 0) {
                 nextPaymentData = {
                     amount: totalPendingCharges,
-                    dueDate: "Cargos Adicionales Pendientes",
+                    dueDate: "Additional Charges Pending",
                     daysLeft: 0,
                 };
             }
@@ -755,11 +755,11 @@ export class MockBackendService {
         };
 
         const maintenanceSummary = {
-          pending: managedRequests.filter(r => r.status === 'Pendiente').length,
-          inProgress: managedRequests.filter(r => r.status === 'En Progreso').length,
+          pending: managedRequests.filter(r => r.status === 'Pending').length,
+          inProgress: managedRequests.filter(r => r.status === 'In Progress').length,
           completedThisMonth: managedRequests.filter(r => {
             const completedDate = new Date(r.dateSubmitted); // Assuming dateSubmitted is ISO string
-            return r.status === 'Completado' && completedDate >= firstDayOfMonth;
+            return r.status === 'Completed' && completedDate >= firstDayOfMonth;
           }).length,
         };
         
@@ -925,7 +925,6 @@ export class MockBackendService {
 
 // Helper function to get month and year string, assuming it's not exported from dateUtils
 function getMonthYearString(date: Date): string {
-  const month = date.toLocaleString('es-ES', { month: 'long' });
-  const year = date.getFullYear();
-  return `${month.charAt(0).toUpperCase() + month.slice(1)} ${year}`;
+  // Use toLocaleString for a localized, readable month and year string.
+  return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 } 
