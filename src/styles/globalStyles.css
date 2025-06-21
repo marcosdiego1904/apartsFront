@@ -125,6 +125,24 @@ body {
   border-right: 1px solid var(--color-border-dark, #1B4B70); /* Borde sutil para separar */
 }
 
+/* Botón de cierre para el sidebar en móvil */
+.sidebar-close-btn {
+  display: none; /* Oculto por defecto */
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-on-sidebar);
+  cursor: pointer;
+  padding: 10px;
+}
+
+.sidebar-close-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
 .dashboard-sidebar.collapsed {
   transform: translateX(-100%);
 }
@@ -212,6 +230,22 @@ body {
   margin-left: 0;
 }
 
+/* Overlay para el sidebar en móvil */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999; /* Debajo del sidebar pero encima del contenido */
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
 /* HEADER - Rediseñado para mejor gestión del espacio */
 .dashboard-header {
   background-color: var(--color-background-header, #ffffff);
@@ -225,9 +259,10 @@ body {
   box-shadow: var(--shadow-sm, 0 2px 5px rgba(0,0,0,0.03));
   position: sticky;
   top: 0;
-  z-index: 900;
+  z-index: 900; /* Revertido a 900 para que quede debajo del sidebar */
   width: 100%;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -243,7 +278,9 @@ body {
   cursor: pointer;
   padding: 8px;
   margin-right: 12px;
-  display: none;
+  display: flex !important; /* FORZAR visibilidad para depurar y asegurar que siempre se muestre */
+  align-items: center;
+  justify-content: center;
   border-radius: 50%;
   transition: background-color 0.2s ease;
   flex-shrink: 0;
@@ -625,9 +662,10 @@ body {
 
 /* Table Styles */
 .table-container {
+  margin-top: 1.5rem;
   overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border-light, #e2e8f0);
   margin-bottom: 24px;
   width: 100%;
 }
@@ -933,23 +971,24 @@ body {
   }
 }
 
-@media (max-width: 992px) {
+/* El punto de quiebre principal para móvil será 768px */
+@media (max-width: 768px) {
+  /* Ocultar sidebar y ajustar el contenido principal */
   .main-wrapper {
     margin-left: 0;
   }
   
   .dashboard-sidebar {
     transform: translateX(-100%);
-    box-shadow: none;
+    box-shadow: none; /* Sin sombra cuando está oculto */
   }
   
   .dashboard-sidebar.open {
     transform: translateX(0);
-    box-shadow: 2px 0 8px rgba(0,0,0,0.15);
+    box-shadow: var(--shadow-xl); /* Sombra más prominente cuando está abierto */
   }
-}
 
-@media (max-width: 768px) {
+  /* Mostrar el botón de menú */
   .menu-toggle {
     display: flex;
     align-items: center;
@@ -968,6 +1007,7 @@ body {
     gap: 4px;
   }
   
+  /* Ocultar detalles de usuario, solo mostrar avatar */
   .user-details {
     display: none;
   }
@@ -976,15 +1016,19 @@ body {
     margin-right: 0;
   }
   
-  .logout-button span {
+  /* Ocultar texto de los botones, solo mostrar íconos */
+  .logout-button span,
+  .reset-demo-button span {
     display: none;
   }
   
-  .logout-button svg {
+  .logout-button svg,
+  .reset-demo-button svg {
     margin-right: 0;
   }
   
-  .logout-button {
+  .logout-button,
+  .reset-demo-button {
     padding: 8px;
     min-width: 32px;
     justify-content: center;
@@ -1029,6 +1073,11 @@ body {
   .modal-footer .btn {
     width: 100%;
     justify-content: center;
+  }
+
+  /* Mostrar el botón de cierre del sidebar */
+  .sidebar-close-btn {
+    display: block;
   }
 }
 
@@ -1768,4 +1817,98 @@ body {
   border-color: var(--color-error, #EF4444);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+}
+
+/* Overrides para la página de Login */
+body.login-page-active {
+  display: block; /* Anula el flex del dashboard */
+  overflow: auto; /* Permite scroll si el contenido es muy grande */
+}
+
+body.login-page-active #root {
+  display: block; /* Anula el flex del dashboard */
+  height: auto;
+}
+
+/* --- Estilos para Tablas Responsivas --- */
+@media (max-width: 768px) {
+  .table-responsive .table {
+    border: 0;
+  }
+
+  .table-responsive .table thead {
+    display: none; /* Ocultar cabeceras en móvil */
+  }
+
+  .table-responsive .table tr {
+    display: block;
+    margin-bottom: var(--spacing-lg, 16px);
+    border: 1px solid var(--color-border-light, #e2e8f0);
+    border-radius: var(--border-radius-lg, 8px);
+    box-shadow: var(--shadow-sm);
+    background-color: var(--color-background-container, #ffffff);
+    padding: var(--spacing-sm, 12px);
+  }
+
+  .table-responsive .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm, 12px) 0;
+    text-align: right;
+    border-bottom: 1px solid var(--color-border-light, #e2e8f0);
+    font-size: 0.9em;
+  }
+  
+  .table-responsive .table td:last-child {
+    border-bottom: 0;
+  }
+
+  .table-responsive .table td::before {
+    content: attr(data-label);
+    float: left;
+    font-weight: 600;
+    color: var(--color-text-primary, #333);
+    text-align: left;
+    margin-right: var(--spacing-md, 16px);
+  }
+
+  /* Estilos específicos para celdas con contenido flexible */
+  .table-responsive .table .table-actions {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--spacing-xs);
+  }
+  
+  .table-responsive .table .table-actions .btn {
+    width: 100%;
+    max-width: 120px; /* Opcional: para que no ocupen todo el ancho */
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header {
+    padding: 0 12px;
+  }
+  
+  .header-right {
+    gap: 2px;
+  }
+  
+  .notification-bell, .user-profile-container, .logout-button {
+    padding: 4px;
+  }
+  
+  .dashboard-main-content {
+    padding: 12px;
+  }
+  
+  .users-table {
+    font-size: 0.8rem;
+  }
+  
+  .users-table th, .users-table td {
+    padding: 8px 10px;
+  }
 }

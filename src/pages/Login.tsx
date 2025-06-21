@@ -1,8 +1,6 @@
 // src/pages/LoginPage.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './LoginPage.module.css';
-import { Input } from '../components/Input';
-import { Buttons } from '../components/Buttons';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getDemoCredentials } from '../services/authService';
@@ -23,7 +21,16 @@ export const LoginPage = () => {
   const { login: loginContext } = useAuth();
   const navigate = useNavigate();
 
-  // Obtener credenciales de demo para mostrar al usuario
+  useEffect(() => {
+    // Agrega una clase al body cuando el componente se monta
+    document.body.classList.add('login-page-active');
+
+    // Limpia la clase cuando el componente se desmonta
+    return () => {
+      document.body.classList.remove('login-page-active');
+    };
+  }, []); // El array vacío asegura que esto se ejecute solo una vez
+
   const demoCredentials: DemoCredential[] = getDemoCredentials();
 
   const handleUserNameValue = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,148 +43,108 @@ export const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     setIsLoading(true);
     setError(null);
 
     try {
-      // Llama a la función login del contexto que ahora retorna la ruta de redirección
       const { redirectTo } = await loginContext({ 
         username: userNameValue, 
         password: passwordValue 
       });
-
-      console.log('Login successful, redirecting to:', redirectTo);
-
-      // Limpiar el formulario
-      setUserNameValue('');
-      setPasswordValue('');
-
-      // Redirigir según el rol del usuario
+      
       navigate(redirectTo);
 
     } catch (err) {
-      console.error('Login process failed:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Función para autocompletar credenciales de demo
-  const fillCredentials = (username: string, password: string) => {
+  const fillCredentials = (username: string, password?: string) => {
     setUserNameValue(username);
-    setPasswordValue(password);
+    setPasswordValue(password || '');
   };
 
   return (
-    <>
-      <div className={styles.loginContainer}>
-        <div className={styles.elementsContainer}>
-          <h1>Sign in</h1>
+    <div className={styles.loginPage}>
+      <div className={styles.loginFormContainer}>
+        <h1 className={styles.loginTitle}>Sign In</h1>
+        
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.inputGroup}>
+            <label htmlFor="username-input" className={styles.label}>Username</label>
+            <input
+              id="username-input"
+              className={styles.inputField}
+              type='text'
+              value={userNameValue}
+              onChange={handleUserNameValue}
+              required
+            />
+          </div>
+          <div className={styles.inputGroup}>
+            <label htmlFor="password-input" className={styles.label}>Password</label>
+            <input
+              id="password-input"
+              className={styles.inputField}
+              type='password'
+              value={passwordValue}
+              onChange={handlePasswordValue}
+              required
+            />
+          </div>
           
-          {/* Botón para mostrar/ocultar credenciales de demo */}
+          <button
+            type='submit'
+            className={styles.submitButton}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Signing In...' : 'Sign In'}
+          </button>
+
+          {error && (
+            <div className={styles.errorMessage}>
+              {error}
+            </div>
+          )}
+        </form>
+
+        <div className={styles.demoSection}>
           <button 
             type="button"
             onClick={() => setShowCredentials(!showCredentials)}
-            style={{ 
-              marginBottom: '20px', 
-              padding: '5px 10px', 
-              fontSize: '12px',
-              backgroundColor: '#f0f0f0',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
+            className={styles.demoButton}
           >
-            {showCredentials ? 'Ocultar' : 'Mostrar'} Credenciales Demo
+            {showCredentials ? 'Hide Demo Credentials' : 'Show Demo Credentials'}
           </button>
 
-          {/* Panel de credenciales de demo */}
           {showCredentials && (
-            <div style={{
-              backgroundColor: '#f9f9f9',
-              border: '1px solid #ddd',
-              borderRadius: '6px',
-              padding: '15px',
-              marginBottom: '20px',
-              fontSize: '14px',
-              width: '100%'
-            }}>
-              <strong>Credenciales de Demo:</strong>
+            <div className={styles.credentialsPanel}>
+              <strong className={styles.credentialsTitle}>Demo Credentials:</strong>
               {demoCredentials.map((cred, index) => (
-                <div key={index} style={{ 
-                  margin: '8px 0', 
-                  padding: '8px',
-                  backgroundColor: cred.user?.role === 'manager' ? '#e3f2fd' : '#fff3e0',
-                  borderRadius: '4px',
-                  border: '1px solid ' + (cred.user?.role === 'manager' ? '#bbdefb' : '#ffcc02')
-                }}>
-                  <div style={{ fontWeight: 'bold', color: cred.user?.role === 'manager' ? '#1976d2' : '#f57c00' }}>
-                    {cred.user?.role === 'manager' ? '👨‍💼 Manager' : '🏠 Inquilino'}: {cred.user?.firstName}
+                <div key={index} className={styles.credentialCard}>
+                  <div className={`${styles.credentialCardHeader} ${cred.user?.role === 'manager' ? styles.manager : styles.tenant}`}>
+                    {cred.user?.role === 'manager' ? '👨‍💼 Manager' : '🏠 Tenant'}: {cred.user?.firstName}
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <div className={styles.credentialBody}>
                     <span>
                       <strong>User:</strong> {cred.user?.username} | <strong>Pass:</strong> {cred.password}
                     </span>
                     <button
                       type="button"
-                      onClick={() => fillCredentials(cred.user?.username || '', cred.password || '')}
-                      style={{
-                        padding: '4px 8px',
-                        fontSize: '12px',
-                        backgroundColor: '#4caf50',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer'
-                      }}
+                      onClick={() => fillCredentials(cred.user?.username || '', cred.password)}
+                      className={styles.useCredentialButton}
                     >
-                      Usar
+                      Use
                     </button>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
-          <form onSubmit={handleSubmit}>
-            <Input
-              label='Username'
-              type='text'
-              value={userNameValue}
-              onChange={handleUserNameValue}
-              id='username-input'
-            />
-            <Input
-              label='Password'
-              type='password'
-              value={passwordValue}
-              onChange={handlePasswordValue}
-              id='password-input'
-            />
-            <Buttons
-              text={isLoading ? 'Signing In...' : 'Submit'}
-              type='submit'
-            />
-
-            {error && (
-              <div style={{ 
-                color: 'red', 
-                marginTop: '10px', 
-                textAlign: 'center',
-                fontSize: '14px',
-                backgroundColor: '#ffebee',
-                padding: '10px',
-                borderRadius: '4px',
-                border: '1px solid #ffcdd2'
-              }}>
-                {error}
-              </div>
-            )}
-          </form>
         </div>
       </div>
-    </>
+    </div>
   );
 };

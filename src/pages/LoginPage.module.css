@@ -1,12 +1,212 @@
-.loginContainer{
-    background-color: lightgray;
-    height: 500px;
-    width: 350px;
-    margin: 50px auto;
+.loginPage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--color-background-page);
+  font-family: var(--font-family-sans);
 }
-.elementsContainer{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+
+.loginFormContainer {
+  background-color: var(--color-background-container);
+  padding: var(--spacing-xxl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+}
+
+.loginTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-xl);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.inputGroup {
+  text-align: left;
+}
+
+.label {
+  display: block;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xs);
+  font-size: 0.9em;
+}
+
+/* Re-using form-input from globalStyles.css principles */
+.inputField {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1em;
+  color: var(--color-text-primary);
+  background-color: var(--color-background-container);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-xs);
+  transition: border-color var(--transition-duration) var(--transition-timing), 
+              box-shadow var(--transition-duration) var(--transition-timing);
+}
+
+.inputField:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Re-using btn and btn-primary from globalStyles.css principles */
+.submitButton {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+  border: none;
+  padding: 12px 20px;
+  font-size: 1em;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-duration) var(--transition-timing), 
+              transform var(--transition-duration) var(--transition-timing),
+              box-shadow var(--transition-duration) var(--transition-timing);
+  margin-top: var(--spacing-md);
+}
+
+.submitButton:hover {
+  background-color: var(--color-primary-dark);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.submitButton:disabled {
+  background-color: var(--color-border-medium);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Demo Credentials Section */
+.demoSection {
+  margin-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border-light);
+  padding-top: var(--spacing-xl);
+}
+
+.demoButton {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-medium);
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-weight: 500;
+}
+
+.demoButton:hover {
+  background-color: var(--color-background-page);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-dark);
+}
+
+.credentialsPanel {
+  background-color: var(--color-background-page);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+  text-align: left;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.credentialsTitle {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-md);
+}
+
+.credentialCard {
+  background-color: var(--color-background-container);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.credentialCardHeader {
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+.manager {
+  color: var(--color-info-dark);
+}
+
+.tenant {
+  color: var(--color-warning-dark);
+}
+
+.credentialBody {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85em;
+  color: var(--color-text-secondary);
+}
+
+.credentialBody span strong {
+  color: var(--color-text-primary);
+}
+
+.useCredentialButton {
+  background-color: var(--color-success);
+  color: var(--color-text-on-primary);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  padding: 4px 10px;
+  font-size: 0.8em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.useCredentialButton:hover {
+  background-color: var(--color-success-dark);
+}
+
+/* Error Message */
+.errorMessage {
+  background-color: var(--color-error-light);
+  color: var(--color-error-dark);
+  border: 1px solid var(--color-error);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-sm) var(--spacing-md);
+  margin-top: var(--spacing-md);
+  font-size: 0.9em;
+  text-align: center;
+}
+
+/* --- Responsive Adjustments for Mobile --- */
+@media (max-width: 480px) {
+  .loginFormContainer {
+    padding: var(--spacing-xl); /* Reducir padding en móviles */
+    margin: 0 var(--spacing-md); /* Añadir margen horizontal */
+  }
+
+  .loginTitle {
+    font-size: 1.8rem; /* Reducir tamaño del título */
+  }
 }

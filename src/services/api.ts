@@ -89,7 +89,7 @@ export type CreateUserPayload = {
     first_name: string;
     last_name: string;
     email: string;
-    password: string; // Contraseña en texto plano que el backend hasheará
+    password?: string; // Contraseña en texto plano que el backend hasheará
     role: UserRole;
     unit_id?: string | null;
     phone_number?: string;

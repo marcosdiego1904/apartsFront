@@ -2,89 +2,86 @@
 
 .dashboard-content-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  padding: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
 }
 
 .dashboard-card {
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
 }
 
 .dashboard-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.07);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
 }
 
 .card-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #374151; /* --color-text-primary */
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #e5e7eb; /* --color-border */
-  padding-bottom: 0.75rem;
+  color: #1a202c;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e8e8e8;
 }
 
 /* Payment Card Specifics */
 .payment-card-summary .payment-amount {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   font-weight: 700;
-  color: #10B981; /* A shade of green for positive financial info */
-  margin-bottom: 0.5rem;
+  color: #3B82F6;
+  margin: 4px 0;
 }
 
 .payment-card-summary .payment-due-date {
   font-size: 0.9rem;
-  color: #6B7280; /* --color-text-secondary */
-  margin-bottom: 1.5rem;
+  color: #64748b;
+  margin-bottom: 20px;
 }
 
 /* Generic Card Button */
 .card-button {
-  background-color: #3B82F6; /* --color-primary */
+  background-color: #3B82F6;
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.6rem 1rem;
-  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  text-align: center;
-  text-decoration: none;
+  font-weight: 500;
   transition: background-color 0.2s;
-  margin-top: auto; /* Pushes button to the bottom */
+  margin-top: auto;
+  align-self: flex-start;
+  min-width: 120px;
+  text-align: center;
 }
 
 .card-button:hover {
-  background-color: #2563EB; /* --color-primary-dark */
+  background-color: #2563EB;
 }
 
 /* Maintenance and Charges Lists */
-.maintenance-summary ul,
-.charges-summary ul {
+.maintenance-summary ul {
   list-style: none;
   padding: 0;
-  margin-bottom: 1.5rem;
+  margin: 0;
   flex-grow: 1;
 }
 
-.maintenance-summary li,
-.charges-summary li {
+.maintenance-summary li {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
-  font-size: 0.95rem;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.maintenance-summary li:last-child,
-.charges-summary li:last-child {
+.maintenance-summary li:last-child {
   border-bottom: none;
 }
 
@@ -102,73 +99,93 @@
 .status-badge.status-completed { background-color: #d1fae5; color: #059669; }
 .status-badge.status-cancelled { background-color: #fee2e2; color: #dc2626; }
 
+.charges-summary ul, .charges-summary p {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px 0;
+  flex-grow: 1;
+}
 
-.charges-summary .charge-amount {
+.charges-summary li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.charges-summary li:hover {
+  background-color: #f8fafc;
+}
+
+.charge-amount {
   font-weight: 600;
-  color: #4B5563;
+  color: #475569;
 }
 
 /* Quick Actions - Updated */
 .quick-actions-summary {
-    justify-content: center; /* Center the content vertically if space allows */
+  justify-content: center;
 }
 
 .quick-actions-container {
-    display: flex;
-    justify-content: space-around; /* Space out the buttons */
-    align-items: center;
-    width: 100%;
-    margin-top: 1rem;
-    flex-grow: 1;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  flex-grow: 1;
+  align-content: center;
 }
 
 .quick-actions-summary .action-button {
-    display: flex;
-    flex-direction: column; /* Icon on top, text below */
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
-    border: none;
-    color: #4B5563; /* --color-text-secondary */
-    font-weight: 500;
-    font-size: 0.9rem;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: background-color 0.2s, color 0.2s;
-    cursor: pointer;
-    width: 120px; /* Give a fixed width */
-    height: 100px; /* Give a fixed height */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  font-size: 0.9rem;
+  color: #475569;
+  font-weight: 500;
 }
 
 .quick-actions-summary .action-button:hover {
-    background-color: #F9FAFB; /* A very light grey on hover */
-    color: #3B82F6; /* --color-primary */
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border-color: #a5b4fc;
 }
 
 .quick-actions-summary .action-button svg {
-    width: 32px;
-    height: 32px;
-    margin-bottom: 0.5rem; /* Space between icon and text */
-}
-
-.quick-actions-summary .action-button span {
-    text-align: center;
+  font-size: 1.5rem;
 }
 
 /* New styles for Maintenance Request items */
 .request-info {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* Aligns items to the left */
+  display: flex;
+  flex-direction: column;
 }
 
 .request-title {
-    font-weight: 500;
-    color: #374151; /* --color-text-primary */
-    margin-bottom: 0.2rem; /* Small space between title and date */
+  font-weight: 500;
+  color: #334155;
 }
 
 .request-date {
-    font-size: 0.8rem;
-    color: #6B7280; /* --color-text-secondary */
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* --- Responsive Adjustments for Larger Screens --- */
+@media (min-width: 1200px) {
+    .dashboard-content-grid {
+        /* Aumentar el tamaño mínimo de la tarjeta en pantallas más grandes */
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    }
 } 

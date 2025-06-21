@@ -1,5 +1,4 @@
 import { useState,useEffect } from "react";
-import { TenantHeader as Header } from "./TenantHeader";
 import { MainContent } from "./mainContent";
 import ManagerMaintenanceView from "./ManagerMaintenanceView";
 import { ManagerSidebar } from "./ManagerSidebar";
@@ -7,6 +6,7 @@ import UserManagement from "./userList";
 import EnhancedUnitList from "./UnitList";
 import { getManagerDashboardData } from "../services/dashboardService";
 import { useAuth } from "../context/AuthContext";
+import { ManagerHeader } from "./ManagerHeader";
 
 export interface DashboardSummary {
   units: {
@@ -35,7 +35,7 @@ export interface DashboardSummary {
 export const DashboardManager: React.FC = () => {
     const { logout } = useAuth();
     const [activeSection, setActiveSection] = useState<string>('dashboard');
-    const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true); // Default open on desktop
+    const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
     const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth <= 768);
     const [summaryData, setSummaryData] = useState<DashboardSummary>({ units: null, payments: null, maintenance: null, users: null });
     const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -120,13 +120,15 @@ export const DashboardManager: React.FC = () => {
           <ManagerSidebar
             activeSection={activeSection} 
             onNavigate={handleNavigate} 
-            isCollapsed={!isSidebarOpen && isMobile} // Sidebar is "collapsed" if not open AND on mobile
+            isOpen={isSidebarOpen}
+            isMobile={isMobile}
+            onToggle={toggleSidebar}
           />
-          <div className={`main-wrapper ${!isSidebarOpen && !isMobile ? '' : (isSidebarOpen && !isMobile ? '' : 'sidebar-collapsed')}`}>
-            <Header
+          <div className={`main-wrapper ${!isSidebarOpen ? 'sidebar-collapsed' : ''}`}>
+            <ManagerHeader
               currentSectionTitle={sectionTitles[activeSection] || 'ApartsPro Panel'}
-              userName="Admin User" // Example user
-              userRole="Manager"    // Example role
+              userName="Admin User"
+              userRole="Manager"
               onToggleSidebar={toggleSidebar}
               onLogout={handleLogout}
             />

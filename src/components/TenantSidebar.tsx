@@ -1,27 +1,34 @@
 import React from 'react';
-import { FiGrid, FiCreditCard, FiSettings, FiFileText, FiMessageSquare, FiUser } from 'react-icons/fi';
+import { FiGrid, FiCreditCard, FiFileText, FiMessageSquare, FiUser, FiX, FiTool } from 'react-icons/fi';
 
 type ActiveView = 'dashboard' | 'payments' | 'documents' | 'messages' | 'profile' | 'maintenance';
 
 interface TenantSidebarProps {
     activeSection: string;
     onNavigate: (section: ActiveView) => void;
-    isCollapsed: boolean;
+    isOpen: boolean;
+    isMobile: boolean;
+    onToggle: () => void;
   }
   
-  export const TenantSidebar: React.FC<TenantSidebarProps> = ({ activeSection, onNavigate, isCollapsed }) => {
+  export const TenantSidebar: React.FC<TenantSidebarProps> = ({ activeSection, onNavigate, isOpen, isMobile, onToggle }) => {
     const navItems = [
       { id: 'dashboard', label: 'Dashboard', icon: <FiGrid /> },
-      { id: 'payments', label: 'Pagos', icon: <FiCreditCard /> },
-      { id: 'maintenance', label: 'Mantenimiento', icon: <FiSettings /> },
-      { id: 'documents', label: 'Documentos', icon: <FiFileText /> },
-      { id: 'messages', label: 'Mensajes', icon: <FiMessageSquare /> },
-      { id: 'profile', label: 'Mi Perfil', icon: <FiUser /> },
+      { id: 'payments', label: 'Payments', icon: <FiCreditCard /> },
+      { id: 'maintenance', label: 'Maintenance', icon: <FiTool /> },
+      { id: 'documents', label: 'Documents', icon: <FiFileText /> },
+      { id: 'messages', label: 'Messages', icon: <FiMessageSquare /> },
+      { id: 'profile', label: 'My Profile', icon: <FiUser /> },
     ];
   
+    const sidebarClasses = `dashboard-sidebar ${!isOpen && !isMobile ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`;
+
     return (
-      <aside className={`dashboard-sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+      <aside className={sidebarClasses}>
         <div className="sidebar-header">
+          <button className="sidebar-close-btn" onClick={onToggle} aria-label="Close menu">
+            <FiX />
+          </button>
           <h1><FiGrid /> ApartsPro</h1>
           <p className="sidebar-role-indicator">Tenant</p>
         </div>

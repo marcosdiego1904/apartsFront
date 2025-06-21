@@ -11,6 +11,7 @@ import type { MaintenanceRequestDisplayItem } from '../services/MockBackendServi
 import { useAuth } from '../context/AuthContext'; // Import useAuth
 import { getTenantDashboardData } from '../services/dashboardService';
 import { FiPlusCircle, FiMessageCircle } from 'react-icons/fi';
+import ComingSoon from './ComingSoon'; // Importar el nuevo componente
 
 type ActiveView = 'dashboard' | 'payments' | 'documents' | 'messages' | 'profile' | 'maintenance';
 
@@ -109,11 +110,11 @@ const TenantDashboard: React.FC = () => {
 
   const sectionTitles: { [key in ActiveView]: string } = {
     dashboard: 'Dashboard',
-    payments: 'Historial de Pagos',
-    documents: 'Mis Documentos',
-    messages: 'Bandeja de Entrada',
-    profile: 'Mi Perfil',
-    maintenance: 'Solicitudes de Mantenimiento',
+    payments: 'Payments',
+    documents: 'Documents',
+    messages: 'Messages',
+    profile: 'Profile',
+    maintenance: 'Maintenance',
   };
   
   const renderMainContent = () => {
@@ -135,21 +136,21 @@ const TenantDashboard: React.FC = () => {
             {/* Next Payment Card */}
             {nextPayment ? (
               <div className="dashboard-card payment-card-summary">
-                <h3 className="card-title">Próximo Pago</h3>
+                <h3 className="card-title">Next Payment</h3>
                 <p className="payment-amount">${nextPayment.amount.toFixed(2)}</p>
-                <p className="payment-due-date">{nextPayment.dueDate.includes("Cargos") ? nextPayment.dueDate : `Vence en ${nextPayment.daysLeft} días (${nextPayment.dueDate})`}</p>
-                <button onClick={() => handleNavigate('payments')} className="card-button">Ir a Pagar</button>
+                <p className="payment-due-date">{nextPayment.dueDate.includes("Charges") ? nextPayment.dueDate : `Due in ${nextPayment.daysLeft} days (${nextPayment.dueDate})`}</p>
+                <button onClick={() => handleNavigate('payments')} className="card-button">View History</button>
               </div>
             ) : (
                 <div className="dashboard-card payment-card-summary">
-                    <h3 className="card-title">Pagos al Día</h3>
-                    <p>No tienes pagos pendientes.</p>
+                    <h3 className="card-title">No Pending Payments</h3>
+                    <p>You are all caught up.</p>
                 </div>
             )}
 
             {/* Maintenance Requests Card */}
             <div className="dashboard-card maintenance-summary">
-              <h3 className="card-title">Solicitudes de Mantenimiento</h3>
+              <h3 className="card-title">Maintenance Requests</h3>
               {maintenanceSummary.length > 0 ? (
                 <ul>
                   {maintenanceSummary.map(req => (
@@ -162,34 +163,34 @@ const TenantDashboard: React.FC = () => {
                     </li>
                   ))}
                 </ul>
-              ) : <p>No hay solicitudes recientes.</p>}
-              <button onClick={() => handleNavigate('maintenance')} className="card-button">Ver Todas</button>
+              ) : <p>No recent requests found.</p>}
+              <button onClick={() => handleNavigate('maintenance')} className="card-button">View All</button>
             </div>
 
             {/* Manager Charges Card */}
             <div className="dashboard-card charges-summary">
-              <h3 className="card-title">Cargos del Administrador</h3>
+              <h3 className="card-title">Additional Charges</h3>
               {pendingCharges.length > 0 ? (
                 <ul>
                   {pendingCharges.map(charge => (
                     <li key={charge.id}><span>{charge.concept}</span><span className="charge-amount">${charge.amount.toFixed(2)}</span></li>
                   ))}
                 </ul>
-              ) : <p>No hay cargos pendientes.</p>}
-               <button onClick={() => handleNavigate('payments')} className="card-button">Revisar Cargos</button>
+              ) : <p>No pending charges.</p>}
+               <button onClick={() => handleNavigate('payments')} className="card-button">View Details</button>
             </div>
             
             {/* Quick Actions Card */}
             <div className="dashboard-card quick-actions-summary">
-                <h3 className="card-title">Acciones Rápidas</h3>
+                <h3 className="card-title">Quick Actions</h3>
                 <div className="quick-actions-container">
                     <button onClick={() => handleNavigate('maintenance')} className="action-button">
                         <FiPlusCircle />
-                        <span>Nueva Solicitud</span>
+                        <span>New Request</span>
                     </button>
                     <button onClick={() => handleNavigate('messages')} className="action-button">
                         <FiMessageCircle />
-                        <span>Contactar Admin</span>
+                        <span>Contact Manager</span>
                     </button>
                 </div>
             </div>
@@ -198,11 +199,11 @@ const TenantDashboard: React.FC = () => {
       case 'payments':
         return <Payments onPaymentSuccess={fetchDashboardData} />;
       case 'documents':
-        return <div>Documents Content</div>;
+        return <ComingSoon />;
       case 'messages':
-        return <div>Messages Content</div>;
+        return <ComingSoon />;
       case 'profile':
-        return <div>Profile Content</div>;
+        return <ComingSoon />;
       case 'maintenance':
         return <MaintenanceRequestForm onFormSubmit={handleFormSubmit} requests={allTenantRequests} />;
       default:
@@ -212,12 +213,18 @@ const TenantDashboard: React.FC = () => {
 
   return (
     <div className="dashboard-container">
+      <div 
+        className={`sidebar-overlay ${isSidebarOpen && isMobile ? 'active' : ''}`}
+        onClick={toggleSidebar}
+      ></div>
       <TenantSidebar 
         activeSection={activeSection} 
         onNavigate={handleNavigate} 
-        isCollapsed={!isSidebarOpen && isMobile}
+        isOpen={isSidebarOpen}
+        isMobile={isMobile}
+        onToggle={toggleSidebar}
       />
-      <div className={`main-wrapper ${!isSidebarOpen && !isMobile ? '' : (isSidebarOpen && !isMobile ? '' : 'sidebar-collapsed')}`}>
+      <div className={`main-wrapper ${!isSidebarOpen ? 'sidebar-collapsed' : ''}`}>
         <TenantHeader
           currentSectionTitle={sectionTitles[activeSection]}
           userName={user ? `${user.firstName} ${user.lastName}` : 'Inquilino'}
