@@ -672,7 +672,7 @@ body {
 
 .users-table {
   width: 100%;
-  min-width: 700px;
+  min-width: 600px;
   border-collapse: collapse;
   white-space: nowrap;
 }
@@ -1078,6 +1078,16 @@ body {
   /* Mostrar el botón de cierre del sidebar */
   .sidebar-close-btn {
     display: block;
+  }
+
+  /* Anula los estilos de .users-table que rompen la responsividad en móvil */
+  .table-responsive .users-table {
+    min-width: auto;
+    white-space: normal;
+  }
+
+  .table-responsive .table {
+    border: 0;
   }
 }
 

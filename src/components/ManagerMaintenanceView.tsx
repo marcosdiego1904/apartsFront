@@ -291,7 +291,7 @@ const ManagerMaintenanceView: React.FC = () => {
                 </div>
               ) : (
                 <div className="table-container">
-                  <table className="table table-hover">
+                  <table className="users-table">
                     <thead>
                       <tr>
                         <th onClick={() => requestSort('id')}>ID {getSortIndicator('id')}</th>
@@ -307,15 +307,23 @@ const ManagerMaintenanceView: React.FC = () => {
                     <tbody>
                       {displayedRequests.map(request => (
                         <tr key={request.id}>
-                          <td data-label="ID">{request.id}</td>
-                          <td data-label="Tenant">{request.tenantName}</td>
-                          <td data-label="Unit">{request.unit}</td>
-                          <td data-label="Category">{request.category}</td>
-                          <td data-label="Priority"><span className={getPriorityClass(request.priority)}>{request.priority}</span></td>
-                          <td data-label="Status"><span className={getStatusClass(request.status)}>{request.status}</span></td>
-                          <td data-label="Date">{new Date(request.dateSubmitted).toLocaleDateString()}</td>
-                          <td data-label="Actions" className="actions-cell">
-                            <button onClick={() => handleOpenViewModal(request)} className="btn-icon" title="View Details">
+                          <td>{request.id}</td>
+                          <td>{request.tenantName}</td>
+                          <td>{request.unit}</td>
+                          <td>{request.category}</td>
+                          <td>
+                            <span className={getPriorityClass(request.priority)}>
+                              {request.priority}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={getStatusClass(request.status)}>
+                              {request.status}
+                            </span>
+                          </td>
+                          <td>{new Date(request.dateSubmitted).toLocaleDateString()}</td>
+                          <td className="table-actions">
+                            <button onClick={() => handleOpenViewModal(request)} className="btn-icon btn-view" title="View Details">
                               <FiEye />
                             </button>
                             <button onClick={() => handleOpenEditModal(request)} className="btn-icon btn-edit" title="Edit Request">

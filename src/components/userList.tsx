@@ -257,7 +257,7 @@ const UserManagement: React.FC = () => {
       </div>
       {error && <div className="error-alert">{error}</div>}
       <div className="table-container table-responsive">
-        <table className="users-table table">
+        <table className="users-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -271,16 +271,16 @@ const UserManagement: React.FC = () => {
           <tbody>
             {users.map((user) => (
               <tr key={user.id}>
-                <td data-label="Name">{user.first_name} {user.last_name}</td>
-                <td data-label="Email">{user.email}</td>
-                <td data-label="Role"><span className={`badge ${user.role === 'manager' ? 'badge-info' : 'badge-neutral'}`}>{user.role}</span></td>
-                <td data-label="Unit">{user.unit_id || 'N/A'}</td>
-                <td data-label="Status">
+                <td>{user.first_name} {user.last_name}</td>
+                <td>{user.email}</td>
+                <td><span className={`badge ${user.role === 'manager' ? 'badge-info' : 'badge-neutral'}`}>{user.role}</span></td>
+                <td>{user.unit_id || 'N/A'}</td>
+                <td>
                   <span onClick={() => toggleUserStatus(user)} className={`status-badge ${user.is_active ? 'status-active' : 'status-inactive'}`} title={user.is_active ? 'Click to deactivate' : 'Click to activate'}>
                     {user.is_active ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td data-label="Actions" className="table-actions">
+                <td className="table-actions">
                   <button onClick={() => openEditModal(user)} className="btn btn-icon btn-sm btn-outline-secondary" title="Edit User"><FiEdit /></button>
                   <button onClick={() => openDeleteConfirmModal(user)} className="btn btn-icon btn-sm btn-danger" title="Delete User"><FiTrash2 /></button>
                 </td>
